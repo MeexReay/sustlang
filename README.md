@@ -34,14 +34,13 @@ WRITE text cout
 | `COPY_VAR`               | `source_var`, `target_var` | Скопировать значение переменной с `source_var` в `target_var` |
 | `DROP_VAR`               | `name_var` | Дропнуть переменную `name_var` |
 | `HAS_VAR`                | `name_var`, `result_var` | В переменную `result_var` записывается `bool` существует ли переменная `name_var` |
-| `LIST_SIZE`              | `list_var`, `result_var` | Получить размер списка и записать в переменную `result_var` типа `int` |
 
 ### Преобразование переменных
 
 | Команда                  | Параметры  | Описание    |
 |--------------------------|------------|-------------|
 | `TO_STRING`              | `source_var`, `result_var` | Скопировать значение переменной с `source_var` в `result_var`, переводя в `string` |
-| `TO_BYTES`               | `str_var`, `result_var` | Скопировать строку `str_var` в `result_var`, переводя в `list[char]` |
+| `TO_CHARS`               | `str_var`, `result_var` | Скопировать строку `str_var` в `result_var`, переводя в `list[char]` |
 | `TO_INTEGER`             | `source_var`, `result_var` | Скопировать строку `source_var` (тип переменной: `string`/`char`) в `result_var`, переводя в `integer` |
 | `TO_CHAR`             | `source_var`, `result_var` | Скопировать строку `source_var` (тип переменной: `string`/`integer`) в `result_var`, переводя в `char` |
 | `TO_BOOL`             | `source_var`, `result_var` | Скопировать строку `source_var` (тип переменной: `string`/`integer`) в `result_var`, переводя в `bool` |
@@ -53,6 +52,9 @@ WRITE text cout
 | `SUB_STR`                | `str_var`, `start_index`, `end_index` | Сделать подстроку из строки `str_var` и сохранить туда же |
 | `SUB_LIST`               | `list_var`, `start_index`, `end_index` | Сделать подсписок из списка `list_var` и сохранить туда же |
 | `UNPACK_OPTIONAL`        | `optional_var`, `result_var` | Достать данные из `optional_var` и установить в `result_var` |
+| `LIST_SIZE`              | `list_var`, `result_var` | Получить размер списка и записать в переменную `result_var` типа `int` |
+| `STRING_SIZE`            | `string_var`, `result_var` | Получить размер строки и записать в переменную `result_var` типа `int` |
+| `MAP_SIZE`            | `map_var`, `result_var` | Получить размер мапы и записать в переменную `result_var` типа `int` |
 
 ### Циклы
 
@@ -61,6 +63,7 @@ WRITE text cout
 | `FOR`                    | `func(int)`, `start_index`, `end_index` | Функция `func` (с единственным аргументом с типом `int`) вызывается с `start_index` до `end_index` включительно, `start_index` и `end_index` это названия переменных |
 | `FOR_MAP`                | `func(any, any)`, `map_var` | Функция `func` вызывается для каждого `key`, `value` переменной `map_var` |
 | `FOR_LIST`               | `func(any)`, `list_var` | Функция `func` вызывается для каждого предмета переменной `list_var` |
+| `FOR_STRING`             | `func(char)`, `string_var` | Функция `func` вызывается для каждого символа строки `string_var` |
 | `WHILE`                  | `func -> bool` | Функция `func` (с результатом `bool`) вызывается, пока функция выдает `true` |
 
 ### Работа со стримами

@@ -595,9 +595,9 @@ pub enum CommandType {
 
     /// Скопировать строку `str_var` в `result_var`, переводя в `list[char]`
     ///
-    /// Название: TO_BYTES \
+    /// Название: TO_CHARS \
     /// Параметры: `source_var`, `result_var`
-    ToBytes,
+    ToChars,
 
     /// Скопировать строку `source_var` (тип переменной: `string`/`integer`) в `result_var`, переводя в `char`
     ///
@@ -658,12 +658,6 @@ pub enum CommandType {
     /// Название: SUB_LIST \
     /// Параметры: `list_var`, `start_index`, `end_index`
     SubList,
-
-    /// Получить размер списка и записать в переменную `result_var` типа `int`
-    ///
-    /// Название: LIST_SIZE \
-    /// Параметры: `list_var`, `result_var`
-    ListSize,
 
     /// Вывести переменную `name_var` в `stream_var`
     ///
@@ -842,6 +836,30 @@ pub enum CommandType {
     /// Название: UNPACK_OPTIONAL \
     /// Параметры: `optional_var`, `result_var`
     UnpackOptional,
+
+    /// Получить размер списка и записать в переменную `result_var` типа `int`
+    ///
+    /// Название: LIST_SIZE \
+    /// Параметры: `list_var`, `result_var`
+    ListSize,
+
+    /// Получить размер строки и записать в переменную `result_var` типа `int`
+    ///
+    /// Название: MAP_SIZE \
+    /// Параметры: `map_var`, `result_var`
+    MapSize,
+
+    /// Получить размер мапы и записать в переменную `result_var` типа `int`
+    ///
+    /// Название: STRING_SIZE \
+    /// Параметры: `string_var`, `result_var`
+    StringSize,
+
+    /// Функция `func` вызывается для каждого символа строки `string_var`
+    ///
+    /// Название: FOR_STRING \
+    /// Параметры: `func(char)`, `string_var`
+    ForString,
 }
 
 impl CommandType {
@@ -855,7 +873,7 @@ impl CommandType {
             "DROP_VAR" => Ok(CommandType::DropVar),
             "HAS_VAR" => Ok(CommandType::HasVar),
             "TO_STRING" => Ok(CommandType::ToString),
-            "TO_BYTES" => Ok(CommandType::ToBytes),
+            "TO_CHARS" => Ok(CommandType::ToChars),
             "TO_INTEGER" => Ok(CommandType::ToInteger),
             "TO_FLOAT" => Ok(CommandType::ToFloat),
             "TO_CHAR" => Ok(CommandType::ToChar),
@@ -867,12 +885,15 @@ impl CommandType {
             "SUB_STR" => Ok(CommandType::SubStr),
             "SUB_LIST" => Ok(CommandType::SubList),
             "LIST_SIZE" => Ok(CommandType::ListSize),
+            "MAP_SIZE" => Ok(CommandType::MapSize),
+            "STRING_SIZE" => Ok(CommandType::StringSize),
             "WRITE" => Ok(CommandType::Write),
             "READ" => Ok(CommandType::Read),
             "READ_ALL" => Ok(CommandType::ReadAll),
             "FOR" => Ok(CommandType::For),
             "FOR_MAP" => Ok(CommandType::ForMap),
             "FOR_LIST" => Ok(CommandType::ForList),
+            "FOR_STRING" => Ok(CommandType::ForString),
             "WHILE" => Ok(CommandType::While),
             "OPEN_FILE_IN" => Ok(CommandType::OpenFileIn),
             "OPEN_FILE_OUT" => Ok(CommandType::OpenFileOut),
@@ -896,6 +917,7 @@ impl CommandType {
             "HAS_KEY" => Ok(CommandType::HasKey),
             "HAS_VALUE" => Ok(CommandType::HasValue),
             "HAS_OPTIONAL" => Ok(CommandType::HasOptional),
+            "UNPACK_OPTIONAL" => Ok(CommandType::UnpackOptional),
             _ => Err(ScriptError::CommandUnknownError(line)),
         }
     }
@@ -1478,7 +1500,7 @@ impl RunningScript {
 
                     // TODO: write logic
                 }
-                CommandType::ToBytes => {
+                CommandType::ToChars => {
                     let source_var = command.args[0].clone();
                     let result_var = command.args[1].clone();
 
@@ -1547,6 +1569,18 @@ impl RunningScript {
 
                     // TODO: write logic
                 }
+                CommandType::MapSize => {
+                    let map_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::StringSize => {
+                    let string_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
                 CommandType::Read => {
                     let name_var = command.args[0].clone();
                     let size_var = command.args[1].clone();
@@ -1569,6 +1603,12 @@ impl RunningScript {
                 CommandType::ForList => {
                     let func_name = command.args[0].clone();
                     let list_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ForString => {
+                    let func_name = command.args[0].clone();
+                    let string_var = command.args[1].clone();
 
                     // TODO: write logic
                 }
