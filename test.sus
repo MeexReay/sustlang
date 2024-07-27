@@ -1,0 +1,6 @@
+INIT_VAR string text       # init text var
+SET_VAR text Hello World!  # set text to var
+TEMP_VAR char br 10        # create temp var with line break
+ADD_STR text br            # add line break to text
+WRITE text cout            # write text to console
+DROP_VAR text              # drop text var
