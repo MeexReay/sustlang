@@ -1,6 +1,17 @@
-INIT_VAR string text       # init text var
-SET_VAR text Hello World!  # set text to var
-TEMP_VAR char br 10        # create temp var with line break
-ADD_STR text br            # add line break to text
-WRITE text cout            # write text to console
-DROP_VAR text              # drop text var
+FUNC bool println text string # println command
+
+TEMP_VAR char br 10           # line break var
+ADD_STR text br               # add line break to text var
+WRITE text cout               # write text var to console
+
+FUNC_END                      # end println command
+
+
+
+INIT_VAR string text         # init text var
+SET_VAR text Hello World!    # set hello world to var
+
+TEMP_VAR bool result 0       # init temp result var
+USE_FUNC println result text # use println to print text
+
+DROP_VAR text                # drop text var

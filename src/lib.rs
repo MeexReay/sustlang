@@ -1,4 +1,5 @@
 use std::{
+    char::EscapeDebug,
     collections::HashMap,
     hash::Hash,
     io::{Read, Write},
@@ -688,7 +689,7 @@ fn prepare_script(text: String) -> Vec<String> {
             Some(s) => s.0,
             None => s,
         })
-        .filter(|s| !s.trim().is_empty())
+        .filter(|s| !s.trim_matches(' ').is_empty())
         .map(|s| s.trim_end_matches(" ").to_string())
         .collect()
 }
@@ -721,32 +722,31 @@ fn parse_commands(lines: Vec<String>) -> Vec<Command> {
 fn cut_funcs(commands: &mut Vec<Command>) -> Vec<Function> {
     let mut functions: Vec<Function> = Vec::new();
 
-    let mut now_func = None;
+    let mut now_func: Option<Function> = None;
 
     let mut index = 0;
     for command in commands.clone() {
-        match now_func.clone() {
-            Some(mut func) => {
-                if command.command_type == CommandType::FuncEnd {
-                    commands.remove(index);
-                    index -= 1;
+        index += 1;
 
-                    functions.push(func);
+        match now_func.clone() {
+            Some(func) => {
+                index -= 1;
+                commands.remove(index);
+
+                if let CommandType::FuncEnd = command.command_type {
+                    functions.push(func.clone());
                     now_func = None;
                 } else {
-                    commands.remove(index);
-                    index -= 1;
-
-                    func.commands.push(command);
+                    now_func.as_mut().unwrap().commands.push(command);
                 }
             }
             None => {
-                if command.command_type == CommandType::Func {
-                    commands.remove(index);
+                if let CommandType::Func = command.command_type {
                     index -= 1;
+                    commands.remove(index);
 
-                    let name = command.args[0].clone();
-                    let result_type = match VarType::from_name(&command.args[1]) {
+                    let name = command.args[1].clone();
+                    let result_type = match VarType::from_name(&command.args[0]) {
                         Some(i) => i,
                         None => {
                             continue;
@@ -775,12 +775,10 @@ fn cut_funcs(commands: &mut Vec<Command>) -> Vec<Function> {
                         }
                     }
 
-                    now_func = Some(Function::new(name, result_type, parameters, Vec::new()))
+                    now_func = Some(Function::new(name, result_type, parameters, Vec::new()));
                 }
             }
         }
-
-        index += 1;
     }
 
     functions
@@ -903,6 +901,15 @@ impl RunningScript {
         var
     }
 
+    pub fn get_function(&self, name: String) -> Option<Function> {
+        for func in &self.functions {
+            if func.name == name {
+                return Some(func.clone());
+            }
+        }
+        None
+    }
+
     pub fn exec_commands(
         &mut self,
         commands: Vec<Command>,
@@ -1002,9 +1009,6 @@ impl RunningScript {
                         locals.insert(name_var, Variable::Bool(VarType::Bool, Some(result)));
                     }
                 }
-                CommandType::ToString => {}
-                CommandType::AddInt => {}
-                CommandType::AddFloat => {}
                 CommandType::AddStr => {
                     let var_name = command.args[0].clone();
                     let other_var = command.args[1].clone();
@@ -1075,9 +1079,6 @@ impl RunningScript {
                         locals.insert(var_name, var);
                     }
                 }
-                CommandType::SubStr => {}
-                CommandType::SubList => {}
-                CommandType::ListSize => {}
                 CommandType::Write => {
                     let name_var = command.args[0].clone();
                     let stream_var = command.args[1].clone();
@@ -1131,6 +1132,28 @@ impl RunningScript {
                         _ => {}
                     }
                 }
+                CommandType::UseFunc => {
+                    let func_name = command.args[0].clone();
+                    let result_name = command.args[1].clone();
+                    let args_names = command.args[2..].to_vec();
+
+                    let func = self.get_function(func_name).unwrap();
+                    let args: Vec<Variable> = args_names
+                        .iter()
+                        .map(|f| self.get_var(f.to_string(), locals).unwrap())
+                        .collect();
+
+                    self.exec_function(func, result_name, args)
+                }
+                CommandType::Return => {
+                    return;
+                }
+                CommandType::ToString => {}
+                CommandType::AddInt => {}
+                CommandType::AddFloat => {}
+                CommandType::SubStr => {}
+                CommandType::SubList => {}
+                CommandType::ListSize => {}
                 CommandType::Read => {}
                 CommandType::ReadAll => {}
                 CommandType::ReadStr => {}
@@ -1145,10 +1168,6 @@ impl RunningScript {
                 CommandType::OpenTcpListener => {}
                 CommandType::Sleep => {}
                 CommandType::NewThread => {}
-                CommandType::UseFunc => {}
-                CommandType::Return => {
-                    return;
-                }
                 CommandType::Equals => {}
                 CommandType::More => {}
                 CommandType::Less => {}
