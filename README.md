@@ -28,9 +28,9 @@ WRITE text cout
 | `TEMP_VAR`               | `type_var`, `name_var`, `value_var` | Переменная `name_var` инициализируется с типом `type_var` и присваивается `value_var`, переменная дропается после первого же использования |
 | `MOVE_VAR`               | `source_var`, `target_var` | Переместить значение переменной с `source_var` в `target_var` |
 | `COPY_VAR`               | `source_var`, `target_var` | Скопировать значение переменной с `source_var` в `target_var` |
-| `TO_STR_VAR`             | `source_var`, `target_var` | Скопировать значение переменной с `source_var` в `target_var`, переводя в строку |
 | `DROP_VAR`               | `name_var` | Дропнуть переменную `name_var` |
 | `HAS_VAR`                | `name_var`, `result_var` | В переменную `result_var` записывается `bool` существует ли переменная `name_var` |
+| `TO_STRING`              | `source_var`, `target_var` | Скопировать значение переменной с `source_var` в `target_var`, переводя в строку |
 | `ADD_INT`                | `int_var1`, `int_var2` | Прибавить к числу `int_var1` значение `int_var2` |
 | `ADD_FLOAT`              | `float_var1`, `float_var2` | Прибавить к числу `float_var1` значение `float_var2` |
 | `ADD_STR`                | `str_var`, `value_var` | Прибавить к строке `str_var` значение `value_var` (может быть типа `string/char/list[char]`) |
@@ -42,17 +42,18 @@ WRITE text cout
 | `READ_ALL`               | `name_var`, `stream_var` | Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `list[char]` |
 | `READ_STR`               | `name_var`, `size_var`, `stream_var` | Прочитать с `stream_var` ровно `size_var` байтов в переменную `name_var` типа `string` |
 | `READ_STR_ALL`           | `name_var`, `stream_var` | Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `string` |
-| `FOR`                    | `func`, `start_index`, `end_index` | Функция `func` (с единственным аргументом с типом `int`) вызывается с `start_index` до `end_index` включительно, `start_index` и `end_index` это названия переменных |
-| `FOR_MAP`                | `func`, `map_var` | Функция `func` (с двумя аргументами с типами мапы) вызывается для каждого `key`, `value` переменной `map_var` |
-| `FOR_LIST`               | `func`, `list_var` | Функция `func` (с единственным аргументом с типом списка) вызывается для каждого предмета переменной `list_var` |
-| `WHILE`                  | `func` | Функция `func` (с результатом `bool`) вызывается, пока функция выдает `true` |
+| `FOR`                    | `func(int)`, `start_index`, `end_index` | Функция `func` (с единственным аргументом с типом `int`) вызывается с `start_index` до `end_index` включительно, `start_index` и `end_index` это названия переменных |
+| `FOR_MAP`                | `func(any, any)`, `map_var` | Функция `func` вызывается для каждого `key`, `value` переменной `map_var` |
+| `FOR_LIST`               | `func(any)`, `list_var` | Функция `func` вызывается для каждого предмета переменной `list_var` |
+| `WHILE`                  | `func -> bool` | Функция `func` (с результатом `bool`) вызывается, пока функция выдает `true` |
 | `USE_FUNC`               | `func`, `result_var`, `[arg_var1] ... [arg_varN]` | Функция `func` вызывается с переданными аргументами и устанавливает результат в переменную `result_var` |
 | `OPEN_FILE_IN`           | `path_var`, `stream_var` | Открыть файл по пути `path_var` (`path_var`, `stream_var` - переменные) для чтения и записать стрим для чтения в переменную `stream_var` |
 | `OPEN_FILE_OUT`          | `path_var`, `stream_var` | Открыть файл по пути `path_var` (`path_var`, `stream_var` - переменные) для записи и записать стрим для записи в переменную `stream_var` |
 | `OPEN_TCP_CONNECTION`    | `addr_var`, `port_var`, `in_stream`, `out_stream` | Подключиться по `addr_var:port_var` (`addr_var: string`, `port_var: int`, `in_stream: in_stream`, `out_stream: out_stream` - переменные) и записать стримы для чтения и записи в `in_stream` и `out_stream` |
-| `OPEN_TCP_LISTENER`      | `addr_var`, `port_var`, `accept_func` | Ожидание подключений с `addr_var:port_var` (`addr_var: string`, `port_var: int` - переменные), при подключениях вызывается функция `accept_func` с четырьмя аргументами `in_stream: in_stream` и `out_stream: out_stream` и `addr_var: string` и `port_var: int` |
+| `OPEN_TCP_LISTENER`      | `addr_var`, `port_var`, `accept_func(string,int,in_stream,out_stream)` | Ожидание подключений с `addr_var:port_var` (`addr_var: string`, `port_var: int` - переменные), при подключениях вызывается функция `accept_func` |
 | `HAS_OPTIONAL`           | `optional_var`, `result_var` | Узнать, имеет ли данные опшнл `optional_var` и записать результат в `result_var: bool` |
-| `WHEN_OPTIONAL`          | `optional_var`, `func` | Когда опшнл `optional_var` имеет данные, вызывается `func` с единственным аргументом типа опшнла |
+| `WHEN_OPTIONAL`          | `optional_var`, `func(option[any])` | Когда опшнл `optional_var` имеет данные, вызывается `func` |
+| `SLEEP`          | `time_var` | Ждать миллисекунд из переменной `time_var` (тип переменной: int) |
 
 ## Типы переменных
 
@@ -64,7 +65,7 @@ WRITE text cout
 | `float`                | `SET_VAR var 14.48`                | `14.48`                  |
 | `char`                 | `SET_VAR var 255`                  | `0 - 255`                |
 | `list[type]`           | `SET_VAR var.0 value`              | `value`                  |
-| `map[key_type value_type]` | `SET_VAR var.key value`         | `value`                  |
+| `map[key_type,value_type]` | `SET_VAR var.key value`         | `value`                  |
 | `optional[type]`       | `SET_VAR var (value)`              | `(value)` / `null`       |
 | `in_stream`            | `OPEN_FILE_IN path var`            |                          |
 | `out_stream`           | `OPEN_FILE_OUT path var`           |                          |
