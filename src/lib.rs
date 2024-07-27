@@ -683,18 +683,6 @@ pub enum CommandType {
     /// Параметры: `name_var`, `stream_var`
     ReadAll,
 
-    /// Прочитать с `stream_var` ровно `size_var` байтов в переменную `name_var` типа `string`
-    ///
-    /// Название: READ_STR \
-    /// Параметры: `name_var`, `size_var`, `stream_var`
-    ReadStr,
-
-    /// Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `string`
-    ///
-    /// Название: READ_STR_ALL \
-    /// Параметры: `name_var`, `stream_var`
-    ReadStrAll,
-
     /// Функция `func` (с единственным аргументом с типом `int`) вызывается с `start_index` до `end_index` включительно, `start_index` и `end_index` это названия переменных
     ///
     /// Название: FOR \
@@ -848,6 +836,12 @@ pub enum CommandType {
     /// Название: HAS_OPTIONAL \
     /// Параметры: `optional_var`, `result_var`
     HasOptional,
+
+    /// Достать данные из `optional_var` и установить в `result_var`
+    ///
+    /// Название: UNPACK_OPTIONAL \
+    /// Параметры: `optional_var`, `result_var`
+    UnpackOptional,
 }
 
 impl CommandType {
@@ -876,8 +870,6 @@ impl CommandType {
             "WRITE" => Ok(CommandType::Write),
             "READ" => Ok(CommandType::Read),
             "READ_ALL" => Ok(CommandType::ReadAll),
-            "READ_STR" => Ok(CommandType::ReadStr),
-            "READ_STR_ALL" => Ok(CommandType::ReadStrAll),
             "FOR" => Ok(CommandType::For),
             "FOR_MAP" => Ok(CommandType::ForMap),
             "FOR_LIST" => Ok(CommandType::ForList),
@@ -1480,43 +1472,237 @@ impl RunningScript {
                         )?;
                     }
                 }
-                CommandType::ToString => {}
-                CommandType::ToBytes => {}
-                CommandType::ToInteger => {}
-                CommandType::ToFloat => {}
-                CommandType::ToBool => {}
-                CommandType::ToChar => {}
-                CommandType::GetSymbol => {}
-                CommandType::AddInt => {}
-                CommandType::AddFloat => {}
-                CommandType::SubStr => {}
-                CommandType::SubList => {}
-                CommandType::ListSize => {}
-                CommandType::Read => {}
-                CommandType::ReadAll => {}
-                CommandType::ReadStr => {}
-                CommandType::ReadStrAll => {}
-                CommandType::ForMap => {}
-                CommandType::ForList => {}
-                CommandType::While => {}
-                CommandType::OpenFileIn => {}
-                CommandType::OpenFileOut => {}
-                CommandType::OpenTcpConnection => {}
-                CommandType::OpenTcpListener => {}
-                CommandType::Sleep => {}
-                CommandType::NewThread => {}
-                CommandType::Equals => {}
-                CommandType::More => {}
-                CommandType::Less => {}
-                CommandType::And => {}
-                CommandType::Or => {}
-                CommandType::If => {}
-                CommandType::HasStr => {}
-                CommandType::HasItem => {}
-                CommandType::HasEntry => {}
-                CommandType::HasKey => {}
-                CommandType::HasValue => {}
-                CommandType::HasOptional => {}
+                CommandType::ToString => {
+                    let source_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ToBytes => {
+                    let source_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ToInteger => {
+                    let source_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ToFloat => {
+                    let source_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ToBool => {
+                    let source_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ToChar => {
+                    let source_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::GetSymbol => {
+                    let str_var = command.args[0].clone();
+                    let index_var = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::AddInt => {
+                    let var = command.args[0].clone();
+                    let other_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::AddFloat => {
+                    let var = command.args[0].clone();
+                    let other_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::SubStr => {
+                    let str_var = command.args[0].clone();
+                    let start_index = command.args[1].clone();
+                    let end_index = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::SubList => {
+                    let list_var = command.args[0].clone();
+                    let start_index = command.args[1].clone();
+                    let end_index = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ListSize => {
+                    let list_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::Read => {
+                    let name_var = command.args[0].clone();
+                    let size_var = command.args[1].clone();
+                    let stream_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ReadAll => {
+                    let name_var = command.args[0].clone();
+                    let stream_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ForMap => {
+                    let func_name = command.args[0].clone();
+                    let map_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::ForList => {
+                    let func_name = command.args[0].clone();
+                    let list_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::While => {
+                    let func_name = command.args[0].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::OpenFileIn => {
+                    let path_var = command.args[0].clone();
+                    let stream_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::OpenFileOut => {
+                    let path_var = command.args[0].clone();
+                    let stream_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::OpenTcpConnection => {
+                    let addr_var = command.args[0].clone();
+                    let port_var = command.args[1].clone();
+                    let in_stream = command.args[2].clone();
+                    let out_stream = command.args[3].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::OpenTcpListener => {
+                    let addr_var = command.args[0].clone();
+                    let port_var = command.args[1].clone();
+                    let accept_func = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::Sleep => {
+                    let time_var = command.args[0].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::NewThread => {
+                    let func_name = command.args[0].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::Equals => {
+                    let var = command.args[0].clone();
+                    let other_var = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::More => {
+                    let var = command.args[0].clone();
+                    let other_var = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::Less => {
+                    let var = command.args[0].clone();
+                    let other_var = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::And => {
+                    let var = command.args[0].clone();
+                    let other_var = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::Or => {
+                    let var = command.args[0].clone();
+                    let other_var = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::If => {
+                    let bool_var = command.args[0].clone();
+                    let func_name = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::HasStr => {
+                    let string_var = command.args[0].clone();
+                    let substring = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::HasItem => {
+                    let list_var = command.args[0].clone();
+                    let item_var = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::HasEntry => {
+                    let map_var = command.args[0].clone();
+                    let key_var = command.args[1].clone();
+                    let value_var = command.args[2].clone();
+                    let result_var = command.args[3].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::HasKey => {
+                    let map_var = command.args[0].clone();
+                    let key_var = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::HasValue => {
+                    let map_var = command.args[0].clone();
+                    let value_var = command.args[1].clone();
+                    let result_var = command.args[2].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::HasOptional => {
+                    let optional_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
+                CommandType::UnpackOptional => {
+                    let optional_var = command.args[0].clone();
+                    let result_var = command.args[1].clone();
+
+                    // TODO: write logic
+                }
                 _ => {}
             }
 

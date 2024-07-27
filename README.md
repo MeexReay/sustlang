@@ -52,6 +52,7 @@ WRITE text cout
 | `ADD_STR`                | `str_var`, `value_var` | Прибавить к строке `str_var` значение `value_var` (может быть типа `string/char/list[char]`) |
 | `SUB_STR`                | `str_var`, `start_index`, `end_index` | Сделать подстроку из строки `str_var` и сохранить туда же |
 | `SUB_LIST`               | `list_var`, `start_index`, `end_index` | Сделать подсписок из списка `list_var` и сохранить туда же |
+| `UNPACK_OPTIONAL`        | `optional_var`, `result_var` | Достать данные из `optional_var` и установить в `result_var` |
 
 ### Циклы
 
@@ -67,10 +68,8 @@ WRITE text cout
 | Команда                  | Параметры  | Описание    |
 |--------------------------|------------|-------------|
 | `WRITE`                  | `name_var`, `stream_var` | Вывести переменную `name_var` в `stream_var` |
-| `READ`                   | `name_var`, `size_var`, `stream_var` | Прочитать с `stream_var` ровно `size_var` байтов в переменную `name_var` типа `list[char]` |
-| `READ_ALL`               | `name_var`, `stream_var` | Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `list[char]` |
-| `READ_STR`               | `name_var`, `size_var`, `stream_var` | Прочитать с `stream_var` ровно `size_var` байтов в переменную `name_var` типа `string` |
-| `READ_STR_ALL`           | `name_var`, `stream_var` | Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `string` |
+| `READ`                   | `name_var`, `size_var`, `stream_var` | Прочитать с `stream_var` ровно `size_var` байтов в переменную `name_var` типа `list[char]`/`string` |
+| `READ_ALL`               | `name_var`, `stream_var` | Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `list[char]`/`string` |
 | `OPEN_FILE_IN`           | `path_var`, `stream_var` | Открыть файл по пути `path_var` (`path_var`, `stream_var` - переменные) для чтения и записать стрим для чтения в переменную `stream_var` |
 | `OPEN_FILE_OUT`          | `path_var`, `stream_var` | Открыть файл по пути `path_var` (`path_var`, `stream_var` - переменные) для записи и записать стрим для записи в переменную `stream_var` |
 | `OPEN_TCP_CONNECTION`    | `addr_var`, `port_var`, `in_stream`, `out_stream` | Подключиться по `addr_var:port_var` (`addr_var: string`, `port_var: int`, `in_stream: in_stream`, `out_stream: out_stream` - переменные) и записать стримы для чтения и записи в `in_stream` и `out_stream` |
