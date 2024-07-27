@@ -1,20 +1,21 @@
 FUNC null println text string # println command
-
-TEMP_VAR char br 10           # line break var
-ADD_STR text br               # add line break to text var
-WRITE text cout               # write text var to console
-
+    TEMP_VAR char br 10       # line break var
+    ADD_STR text br           # add line break to text var
+    WRITE text cout           # write text var to console
 FUNC_END                      # end println command
+
+FUNC null hello_world index integer
+    USE_FUNC println null text
+FUNC_END
+
+
 
 INIT_VAR string text
 SET_VAR text Hello World!
 
-FUNC null hello_world index integer
-
-USE_FUNC println null text
-
-FUNC_END
-
 TEMP_VAR integer start_index 0
 TEMP_VAR integer end_index 9
+
 FOR hello_world start_index end_index
+
+DROP_VAR text

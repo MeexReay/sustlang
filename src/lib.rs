@@ -956,7 +956,13 @@ fn prepare_script(text: String) -> Vec<String> {
             Some(s) => s.0,
             None => s,
         })
-        .map(|s| s.trim_end_matches(" ").to_string())
+        .map(|s| {
+            s.trim_end_matches(" ")
+                .trim_end_matches("\t")
+                .trim_start_matches(" ")
+                .trim_start_matches("\t")
+                .to_string()
+        })
         .collect()
 }
 
@@ -1226,6 +1232,8 @@ impl RunningScript {
         let mut var: Option<&mut Variable> = None;
         let parts: Vec<&str> = name.split('.').collect();
 
+        let global = global || (self.variables.contains_key(&name) && !locals.contains_key(&name));
+
         if parts.len() == 1 {
             if global {
                 self.variables.insert(name, value);
@@ -1457,6 +1465,21 @@ impl RunningScript {
                 CommandType::Return => {
                     return Ok(());
                 }
+                CommandType::For => {
+                    let func_name = command.args[0].clone();
+                    let start_index = self.get_var(command.args[1].clone(), locals)?.as_int()?;
+                    let end_index = self.get_var(command.args[2].clone(), locals)?.as_int()?;
+
+                    let func = self.get_function(func_name).unwrap();
+
+                    for index in start_index..=end_index {
+                        self.exec_function(
+                            func.clone(),
+                            "null".to_string(),
+                            vec![Variable::from_int(Some(index))],
+                        )?;
+                    }
+                }
                 CommandType::ToString => {}
                 CommandType::ToBytes => {}
                 CommandType::ToInteger => {}
@@ -1473,21 +1496,6 @@ impl RunningScript {
                 CommandType::ReadAll => {}
                 CommandType::ReadStr => {}
                 CommandType::ReadStrAll => {}
-                CommandType::For => {
-                    let func_name = command.args[0].clone();
-                    let start_index = self.get_var(command.args[1].clone(), locals)?.as_int()?;
-                    let end_index = self.get_var(command.args[2].clone(), locals)?.as_int()?;
-
-                    let func = self.get_function(func_name).unwrap();
-
-                    for index in start_index..=end_index {
-                        self.exec_function(
-                            func.clone(),
-                            "null".to_string(),
-                            vec![Variable::from_int(Some(index))],
-                        )?;
-                    }
-                }
                 CommandType::ForMap => {}
                 CommandType::ForList => {}
                 CommandType::While => {}

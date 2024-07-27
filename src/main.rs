@@ -7,8 +7,16 @@ use std::{
 use sustlang::{RunningScript, Script};
 
 fn main() {
-    let script = Script::parse(fs::read_to_string("test.sus").unwrap()).unwrap();
+    let args: Vec<String> = args().collect();
+
+    let filename = args[1].clone();
+    let args = args[1..].to_vec();
+
+    let script = Script::parse(fs::read_to_string(filename).unwrap()).unwrap();
+
     let mut running_script = RunningScript::new(script);
-    running_script.set_standard_vars(args().collect(), Box::new(stdout()), Box::new(stdin()));
+    running_script
+        .set_standard_vars(args, Box::new(stdout()), Box::new(stdin()))
+        .unwrap();
     running_script.run().unwrap();
 }
