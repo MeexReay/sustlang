@@ -40,7 +40,13 @@ WRITE text cout
 
 | Команда                  | Параметры  | Описание    |
 |--------------------------|------------|-------------|
-| `TO_STRING`              | `source_var`, `target_var` | Скопировать значение переменной с `source_var` в `target_var`, переводя в строку |
+| `TO_STRING`              | `source_var`, `result_var` | Скопировать значение переменной с `source_var` в `result_var`, переводя в `string` |
+| `TO_BYTES`               | `str_var`, `result_var` | Скопировать строку `str_var` в `result_var`, переводя в `list[char]` |
+| `TO_INTEGER`             | `source_var`, `result_var` | Скопировать строку `source_var` (тип переменной: `string`/`char`) в `result_var`, переводя в `integer` |
+| `TO_CHAR`             | `source_var`, `result_var` | Скопировать строку `source_var` (тип переменной: `string`/`integer`) в `result_var`, переводя в `char` |
+| `TO_BOOL`             | `source_var`, `result_var` | Скопировать строку `source_var` (тип переменной: `string`/`integer`) в `result_var`, переводя в `bool` |
+| `TO_FLOAT`               | `source_var`, `result_var` | Скопировать строку `source_var` в `result_var`, переводя в `float` |
+| `GET_SYMBOL`             | `str_var`, `index_var`, `result_var` | Скопировать символ из строки `str_var` по индексу `index_var` и записать в `result_var` |
 | `ADD_INT`                | `int_var1`, `int_var2` | Прибавить к числу `int_var1` значение `int_var2` |
 | `ADD_FLOAT`              | `float_var1`, `float_var2` | Прибавить к числу `float_var1` значение `float_var2` |
 | `ADD_STR`                | `str_var`, `value_var` | Прибавить к строке `str_var` значение `value_var` (может быть типа `string/char/list[char]`) |
@@ -79,6 +85,7 @@ WRITE text cout
 | `LESS`                   | `var`, `other_var`, `result_var` | Узнать, меньше ли в `var` чем в `other_var` записать результат в `result_var` |
 | `AND`                    | `var`, `other_var`, `result_var` | Если `var` и `other_var` равны `true`, то результат `true`, иначе `false`, записать результат в `result_var` |
 | `OR`                     | `var`, `other_var`, `result_var` | Если `var` или `other_var` равен `true`, то результат `true`, иначе `false`, записать результат в `result_var`  |
+| `NOT`                    | `var`, `result_var` | Если `var` равен `true`, то результат `false`, иначе `true`, записать результат в `result_var`  |
 | `IF`                     | `bool_var`, `func` | Если `var` равен `true` то вызвать функцию `func` |
 | `HAS_STR`                | `string_var`, `substring`, `result_var` | Узнать, имеет ли строка `var` в себе подстроку `substring` и записать результат в `result_var` |
 | `HAS_ITEM`               | `list_var`, `item_var`, `result_var` | Узнать, имеет ли список `list_var` значение `item_var` и записать результат в `result_var` |

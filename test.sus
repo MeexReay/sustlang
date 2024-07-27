@@ -1,4 +1,4 @@
-FUNC bool println text string # println command
+FUNC null println text string # println command
 
 TEMP_VAR char br 10           # line break var
 ADD_STR text br               # add line break to text var
@@ -6,12 +6,15 @@ WRITE text cout               # write text var to console
 
 FUNC_END                      # end println command
 
+INIT_VAR string text
+SET_VAR text Hello World!
 
+FUNC null hello_world index integer
 
-INIT_VAR string text         # init text var
-SET_VAR text Hello World!    # set hello world to var
+USE_FUNC println null text
 
-TEMP_VAR bool result 0       # init temp result var
-USE_FUNC println result text # use println to print text
+FUNC_END
 
-DROP_VAR text                # drop text var
+TEMP_VAR integer start_index 0
+TEMP_VAR integer end_index 9
+FOR hello_world start_index end_index
