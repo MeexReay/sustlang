@@ -1,4 +1,7 @@
-use crate::{variable, Pohuy};
+use bytebuffer::ByteBuffer;
+use rand::Rng;
+
+use crate::{variable, FileOutStream, Pohuy};
 
 use super::super::command::CommandType;
 use super::super::script::{RunningScript, ScriptError};
@@ -6,8 +9,8 @@ use super::super::var::{VarType, Variable};
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::thread;
 use std::time::Duration;
+use std::{fs, thread};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Command {
@@ -1573,6 +1576,41 @@ impl Command {
                     };
                 });
             }
+            CommandType::Random => {
+                let min_var = self.args[0].clone();
+                let max_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
+
+                let min_var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(min_var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?
+                    .as_int()
+                    .map_err(|f| (f, self.clone()))?;
+
+                let max_var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(max_var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?
+                    .as_int()
+                    .map_err(|f| (f, self.clone()))?;
+
+                let result = rand::thread_rng().gen_range(min_var..=max_var);
+
+                script
+                    .lock()
+                    .unwrap()
+                    .set_var(
+                        result_var,
+                        Variable::from_int(Some(result)),
+                        global,
+                        false,
+                        locals,
+                    )
+                    .map_err(|f| (f, self.clone()))?;
+            }
             CommandType::Import => {
                 let script_path_var = self.args[0].clone();
 
@@ -1587,13 +1625,58 @@ impl Command {
                 let path_var = self.args[0].clone();
                 let stream_var = self.args[1].clone();
 
-                // TODO: write logic
+                let path_var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(path_var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?
+                    .as_str()
+                    .map_err(|f| (f, self.clone()))?;
+
+                let result =
+                    fs::read(path_var).map_err(|_| (ScriptError::FileReadError, self.clone()))?;
+
+                script
+                    .lock()
+                    .unwrap()
+                    .set_var(
+                        stream_var,
+                        Variable::from_in_stream(Some(Arc::new(Mutex::new(
+                            ByteBuffer::from_bytes(&result),
+                        )))),
+                        global,
+                        false,
+                        locals,
+                    )
+                    .map_err(|f| (f, self.clone()))?;
             }
             CommandType::OpenFileOut => {
                 let path_var = self.args[0].clone();
                 let stream_var = self.args[1].clone();
 
-                // TODO: write logic
+                let path_var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(path_var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?
+                    .as_str()
+                    .map_err(|f| (f, self.clone()))?;
+
+                let bytes = fs::read(path_var.clone())
+                    .map_err(|_| (ScriptError::FileWriteError, self.clone()))?;
+                let result = FileOutStream::new(path_var, bytes);
+
+                script
+                    .lock()
+                    .unwrap()
+                    .set_var(
+                        stream_var,
+                        Variable::from_out_stream(Some(Arc::new(Mutex::new(result)))),
+                        global,
+                        false,
+                        locals,
+                    )
+                    .map_err(|f| (f, self.clone()))?;
             }
             CommandType::OpenTcpConnection => {
                 let addr_var = self.args[0].clone();

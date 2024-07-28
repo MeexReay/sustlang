@@ -12,6 +12,8 @@ pub enum ScriptError {
     StringUTF8Error,
     VarInitedError,
     FunctionUnknownError,
+    FileReadError,
+    FileWriteError,
 }
 
 impl Display for ScriptError {

@@ -359,6 +359,12 @@ pub enum CommandType {
     /// Название: IMPORT_TEXT \
     /// Параметры: `script_text_var`
     ImportText,
+
+    /// Получить рандомное число от `min_var: int` до `max_var: int` включительно и записать в `result_var: int`
+    ///
+    /// Название: RANDOM \
+    /// Параметры: `min_var`, `max_var`, `result_var`
+    Random,
 }
 
 impl CommandType {
@@ -424,6 +430,7 @@ impl CommandType {
             "NONE_OPTIONAL" => Ok(CommandType::NoneOptional),
             "IMPORT_TEXT" => Ok(CommandType::ImportText),
             "IMPORT" => Ok(CommandType::Import),
+            "RANDOM" => Ok(CommandType::Random),
             _ => Err(ScriptError::CommandUnknownError),
         }
     }

@@ -5,3 +5,5 @@ edition = "2021"
 readme = "README.md"
 
 [dependencies]
+rand = "0.8.5"
+bytebuffer = "2.2.0"
