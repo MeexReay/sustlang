@@ -1,0 +1,8 @@
+FUNC null println text string # println function
+    TEMP_VAR char new_line 10 # init line break var
+    ADD_STR text new_line     # add line break to text var
+    WRITE text cout           # write text var to console
+FUNC_END                      # end println function
+
+TEMP_VAR string text Hello World!
+USE_FUNC println null text

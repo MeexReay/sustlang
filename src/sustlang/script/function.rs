@@ -4,6 +4,7 @@ use super::super::var::{VarType, Variable};
 use super::{RunningScript, ScriptError};
 
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Function {
@@ -30,7 +31,7 @@ impl Function {
 
     pub fn execute(
         &self,
-        script: &mut RunningScript,
+        script: Arc<Mutex<RunningScript>>,
         result_var: String,
         args: Vec<Variable>,
         is_global: bool,
@@ -53,7 +54,7 @@ impl Function {
                 return Ok(());
             }
 
-            command.execute(script, is_global, &mut locals, &mut temp_vars)?;
+            command.execute(script.clone(), is_global, &mut locals, &mut temp_vars)?;
 
             if let CommandType::TempVar = command.command_type {
                 continue;
@@ -61,6 +62,9 @@ impl Function {
 
             for ele in temp_vars.clone() {
                 script
+                    .clone()
+                    .lock()
+                    .unwrap()
                     .drop_var(ele, &mut locals)
                     .map_err(|f| (f, command.clone()))
                     .pohuy();
@@ -69,6 +73,9 @@ impl Function {
 
         if result_var != "null" {
             script
+                .clone()
+                .lock()
+                .unwrap()
                 .set_var(
                     result_var,
                     locals.get("result").unwrap().clone(),

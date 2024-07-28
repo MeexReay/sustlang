@@ -312,6 +312,18 @@ pub enum CommandType {
     /// Параметры: `optional_var`, `result_var`
     UnpackOptional,
 
+    /// Упаковать `var` в `optional` и установить в `result_var`
+    ///
+    /// Название: PACK_OPTIONAL \
+    /// Параметры: `var`, `result_var`
+    PackOptional,
+
+    /// Установить пустой `optional` в `var`
+    ///
+    /// Название: NONE_OPTIONAL \
+    /// Параметры: `var`
+    NoneOptional,
+
     /// Получить размер списка и записать в переменную `result_var` типа `int`
     ///
     /// Название: LIST_SIZE \
@@ -335,6 +347,18 @@ pub enum CommandType {
     /// Название: FOR_STRING \
     /// Параметры: `func(char)`, `string_var`
     ForString,
+
+    /// Импортировать код из скрипта по пути (путь должен быть с расширением файла) (путь это переменная)
+    ///
+    /// Название: IMPORT \
+    /// Параметры: `script_path`
+    Import,
+
+    /// Импортировать код из текста переменной в скрипт
+    ///
+    /// Название: IMPORT_TEXT \
+    /// Параметры: `script_text_var`
+    ImportText,
 }
 
 impl CommandType {
@@ -396,6 +420,10 @@ impl CommandType {
             "HAS_VALUE" => Ok(CommandType::HasValue),
             "HAS_OPTIONAL" => Ok(CommandType::HasOptional),
             "UNPACK_OPTIONAL" => Ok(CommandType::UnpackOptional),
+            "PACK_OPTIONAL" => Ok(CommandType::PackOptional),
+            "NONE_OPTIONAL" => Ok(CommandType::NoneOptional),
+            "IMPORT_TEXT" => Ok(CommandType::ImportText),
+            "IMPORT" => Ok(CommandType::Import),
             _ => Err(ScriptError::CommandUnknownError),
         }
     }

@@ -12,6 +12,9 @@ pub struct RunningScript {
     variables: HashMap<String, Variable>,
 }
 
+unsafe impl Sync for RunningScript {}
+unsafe impl Send for RunningScript {}
+
 impl RunningScript {
     pub fn new(script: Script) -> RunningScript {
         RunningScript {
@@ -186,23 +189,8 @@ impl RunningScript {
         let mut var: Option<&mut Variable> = None;
         let parts: Vec<&str> = (&name).split('.').collect();
 
-        match self.get_var(name.clone(), locals) {
-            Ok(i) => {
-                if init {
-                    return Err(ScriptError::VarInitedError);
-                } else if i.get_type() != var_type {
-                    return Err(ScriptError::TypeMismatchError);
-                }
-            }
-            Err(_) => {
-                if !init {
-                    return Err(ScriptError::UnknownVarError);
-                }
-            }
-        }
-
-        let global =
-            global || (self.variables.contains_key(parts[0]) && !locals.contains_key(parts[0]));
+        let global = global
+            || (self.variables.contains_key(parts[0]) && !locals.contains_key(parts[0]) && !init);
 
         if parts.len() == 1 {
             if global {
@@ -287,9 +275,14 @@ impl RunningScript {
         Err(ScriptError::FunctionUnknownError)
     }
 
-    pub fn run(&mut self) -> Result<(), (ScriptError, Command)> {
+    pub fn run(self) -> Result<(), (ScriptError, Command)> {
         let main_function = self.main_function.clone();
 
-        main_function.execute(self, "null".to_string(), Vec::new(), true)
+        main_function.execute(
+            Arc::new(Mutex::new(self)),
+            "null".to_string(),
+            Vec::new(),
+            true,
+        )
     }
 }

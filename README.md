@@ -125,6 +125,8 @@ DROP_VAR text        # дропнуть переменную
 | `ADD_STR`                | `str_var`, `value_var` | Прибавить к строке `str_var` значение `value_var` (может быть типа `string/char/list[char]`) |
 | `SUB_STR`                | `str_var`, `start_index`, `end_index` | Сделать подстроку из строки `str_var` и сохранить туда же |
 | `SUB_LIST`               | `list_var`, `start_index`, `end_index` | Сделать подсписок из списка `list_var` и сохранить туда же |
+| `NONE_OPTIONAL`        | `var` | Установить пустой `optional` в `var` |
+| `PACK_OPTIONAL`        | `var`, `result_var` | Упаковать `var` в `optional` и установить в `result_var` |
 | `UNPACK_OPTIONAL`        | `optional_var`, `result_var` | Достать данные из `optional_var` и установить в `result_var` |
 | `LIST_SIZE`              | `list_var`, `result_var` | Получить размер списка и записать в переменную `result_var` типа `int` |
 | `STRING_SIZE`            | `string_var`, `result_var` | Получить размер строки и записать в переменную `result_var` типа `int` |
@@ -213,3 +215,5 @@ FUNC_END
 |--------------------------|------------|-------------|
 | `SLEEP`                  | `time_var` | Ждать миллисекунд из переменной `time_var` (тип переменной: int) |
 | `NEW_THREAD`             | `func`     | Вызвать функцию `func` в новом потоке (КОМАНДА В РАЗРАБОТКЕ) |
+| `IMPORT`                 | `script_path` | Импортировать код из скрипта по пути (путь должен быть с расширением файла) (путь это переменная) (КОМАНДА В РАЗРАБОТКЕ) |
+| `IMPORT_TEXT`            | `script_text_var` | Импортировать код из текста переменной в скрипт (КОМАНДА В РАЗРАБОТКЕ) |

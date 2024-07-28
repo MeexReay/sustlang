@@ -1,0 +1,29 @@
+FUNC null println text string # println function
+    TEMP_VAR char new_line 10
+    ADD_STR text new_line
+    WRITE text cout
+FUNC_END
+
+FUNC null count index int
+    INIT_VAR str str_index
+    TO_STRING index str_index
+    USE_FUNC println null str_index
+    TEMP_VAR int sl 100
+    SLEEP sl
+FUNC_END
+
+FUNC null one_thread
+    TEMP_VAR int start 1
+    TEMP_VAR int end 10
+    FOR count start end
+FUNC_END
+
+FUNC bool loop
+    SET_VAR while true
+FUNC_END
+
+NEW_THREAD one_thread
+
+TEMP_VAR int start 1
+TEMP_VAR int end 10
+FOR count start end

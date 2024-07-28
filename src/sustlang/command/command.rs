@@ -1,8 +1,11 @@
+use crate::{variable, Pohuy};
+
 use super::super::command::CommandType;
 use super::super::script::{RunningScript, ScriptError};
 use super::super::var::{VarType, Variable};
 
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -24,7 +27,7 @@ impl Command {
 
     pub fn execute(
         &self,
-        script: &mut RunningScript,
+        script: Arc<Mutex<RunningScript>>,
         global: bool,
         locals: &mut HashMap<String, Variable>,
         temp_vars: &mut Vec<String>,
@@ -36,6 +39,8 @@ impl Command {
                 let name_var = self.args[1].clone();
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         name_var,
                         Variable::empty_var(type_var).map_err(|f| (f, self.clone()))?,
@@ -50,6 +55,8 @@ impl Command {
                 let value_var = self.args[1..].join(" ");
 
                 let type_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(name_var.clone(), &mut locals.clone())
                     .map_err(|f| (f, self.clone()))?
                     .get_type();
@@ -57,6 +64,8 @@ impl Command {
                     Variable::parse_var(type_var, value_var).map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(name_var, var, global, false, locals)
                     .map_err(|f| (f, self.clone()))?;
             }
@@ -66,6 +75,8 @@ impl Command {
                 let value_var = self.args[2..].join(" ");
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         name_var.clone(),
                         Variable::parse_var(
@@ -86,13 +97,19 @@ impl Command {
                 let target_var = self.args[1].clone();
 
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(source_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(target_var, var, global, false, locals)
                     .map_err(|f| (f, self.clone()))?;
                 script
+                    .lock()
+                    .unwrap()
                     .drop_var(source_var, locals)
                     .map_err(|f| (f, self.clone()))?;
             }
@@ -101,10 +118,14 @@ impl Command {
                 let target_var = self.args[1].clone();
 
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(source_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(target_var, var, global, false, locals)
                     .map_err(|f| (f, self.clone()))?;
             }
@@ -112,6 +133,8 @@ impl Command {
                 let name_var = self.args[0].clone();
 
                 script
+                    .lock()
+                    .unwrap()
                     .drop_var(name_var, locals)
                     .map_err(|f| (f, self.clone()))?;
             }
@@ -119,9 +142,11 @@ impl Command {
                 let name_var = self.args[0].clone();
                 let result_var = self.args[1].clone();
 
-                let result = script.get_var(name_var, locals).is_ok();
+                let result = script.lock().unwrap().get_var(name_var, locals).is_ok();
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(result)),
@@ -136,6 +161,8 @@ impl Command {
                 let other_var = self.args[1].clone();
 
                 let other_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(other_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?;
                 let other_var: String = if let Variable::List(VarType::Char, Some(list)) = other_var
@@ -158,12 +185,16 @@ impl Command {
                 };
 
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(var_name.clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_str()
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         var_name.clone(),
                         Variable::from_str(Some(var.clone() + &other_var)),
@@ -178,6 +209,8 @@ impl Command {
                 let stream_var = self.args[1].clone();
 
                 let text = script
+                    .lock()
+                    .unwrap()
                     .get_var(name_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?;
                 let text: Vec<u8> = if let Variable::List(VarType::Char, Some(list)) = text {
@@ -195,6 +228,8 @@ impl Command {
                 };
 
                 let stream = script
+                    .lock()
+                    .unwrap()
                     .get_var(stream_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_out_stream()
@@ -207,6 +242,8 @@ impl Command {
                 let args_names = self.args[2..].to_vec();
 
                 let func = script
+                    .lock()
+                    .unwrap()
                     .get_function(func_name)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -214,12 +251,14 @@ impl Command {
                 for name in args_names {
                     args.push(
                         script
+                            .lock()
+                            .unwrap()
                             .get_var(name, locals)
                             .map_err(|f| (f, self.clone()))?,
                     );
                 }
 
-                func.execute(script, result_name, args, false)?;
+                func.execute(script.clone(), result_name, args, false)?;
             }
             CommandType::Return => {
                 return Ok(());
@@ -227,23 +266,29 @@ impl Command {
             CommandType::For => {
                 let func_name = self.args[0].clone();
                 let start_index = script
+                    .lock()
+                    .unwrap()
                     .get_var(self.args[1].clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))?;
                 let end_index = script
+                    .lock()
+                    .unwrap()
                     .get_var(self.args[2].clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))?;
 
                 let func = script
+                    .lock()
+                    .unwrap()
                     .get_function(func_name)
                     .map_err(|f| (f, self.clone()))?;
 
                 for index in start_index..=end_index {
                     func.execute(
-                        script,
+                        script.clone(),
                         "null".to_string(),
                         vec![Variable::from_int(Some(index))],
                         false,
@@ -255,12 +300,16 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let source_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(source_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
                 let result = source_var.to_string().map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_str(Some(result)),
@@ -275,6 +324,8 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let source_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(source_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -289,6 +340,8 @@ impl Command {
                     Variable::from_list(Some(result), VarType::List(Box::new(VarType::Char)));
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(result_var, result, global, false, locals)
                     .map_err(|f| (f, self.clone()))?;
             }
@@ -297,6 +350,8 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let source_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(source_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -309,6 +364,8 @@ impl Command {
                 let result = Variable::from_int(Some(result));
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(result_var, result, global, false, locals)
                     .map_err(|f| (f, self.clone()))?;
             }
@@ -317,6 +374,8 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let source_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(source_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -329,6 +388,8 @@ impl Command {
                 let result = Variable::from_float(Some(result));
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(result_var, result, global, false, locals)
                     .map_err(|f| (f, self.clone()))?;
             }
@@ -337,6 +398,8 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let source_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(source_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -367,6 +430,8 @@ impl Command {
                 };
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(result)),
@@ -381,6 +446,8 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let source_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(source_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -395,6 +462,8 @@ impl Command {
                 };
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_char(Some(result)),
@@ -410,9 +479,13 @@ impl Command {
                 let result_var = self.args[2].clone();
 
                 let str_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(str_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let index_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(index_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -425,6 +498,8 @@ impl Command {
                 };
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_char(Some(result)),
@@ -440,9 +515,13 @@ impl Command {
                 let result_var = self.args[2].clone();
 
                 let list_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(list_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let index_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(index_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -455,6 +534,8 @@ impl Command {
                 };
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(result_var, result, global, false, locals)
                     .map_err(|f| (f, self.clone()))?;
             }
@@ -464,9 +545,13 @@ impl Command {
                 let result_var = self.args[2].clone();
 
                 let map_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(map_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let key_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(key_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -477,6 +562,8 @@ impl Command {
                 };
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(result_var, result, global, false, locals)
                     .map_err(|f| (f, self.clone()))?;
             }
@@ -485,11 +572,15 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let list_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(list_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let list_size = list_var.as_list().map_err(|f| (f, self.clone()))?.len();
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_int(Some(list_size as isize)),
@@ -504,11 +595,15 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let map_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(map_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let map_size = map_var.as_list().map_err(|f| (f, self.clone()))?.len();
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_int(Some(map_size as isize)),
@@ -523,11 +618,15 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let string_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(string_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let string_size = string_var.as_list().map_err(|f| (f, self.clone()))?.len();
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_int(Some(string_size as isize)),
@@ -542,16 +641,20 @@ impl Command {
                 let map_var = self.args[1].clone();
 
                 let map_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(map_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let map_var = map_var.as_map().map_err(|f| (f, self.clone()))?;
 
                 let func = script
+                    .lock()
+                    .unwrap()
                     .get_function(func_name)
                     .map_err(|f| (f, self.clone()))?;
 
                 for (k, v) in map_var {
-                    func.execute(script, "null".to_string(), vec![k, v], false)?;
+                    func.execute(script.clone(), "null".to_string(), vec![k, v], false)?;
                 }
             }
             CommandType::ForList => {
@@ -559,16 +662,20 @@ impl Command {
                 let list_var = self.args[1].clone();
 
                 let list_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(list_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let list_var = list_var.as_list().map_err(|f| (f, self.clone()))?;
 
                 let func = script
+                    .lock()
+                    .unwrap()
                     .get_function(func_name)
                     .map_err(|f| (f, self.clone()))?;
 
                 for i in list_var {
-                    func.execute(script, "null".to_string(), vec![i], false)?;
+                    func.execute(script.clone(), "null".to_string(), vec![i], false)?;
                 }
             }
             CommandType::ForString => {
@@ -576,17 +683,21 @@ impl Command {
                 let string_var = self.args[1].clone();
 
                 let string_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(string_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let string_var = string_var.as_str().map_err(|f| (f, self.clone()))?;
 
                 let func = script
+                    .lock()
+                    .unwrap()
                     .get_function(func_name)
                     .map_err(|f| (f, self.clone()))?;
 
                 for c in string_var.as_bytes() {
                     func.execute(
-                        script,
+                        script.clone(),
                         "null".to_string(),
                         vec![Variable::from_char(Some(*c))],
                         false,
@@ -597,10 +708,15 @@ impl Command {
                 let func_name = self.args[0].clone();
 
                 let func = script
+                    .lock()
+                    .unwrap()
                     .get_function(func_name)
-                    .map_err(|f| (f, self.clone()))?;
+                    .map_err(|f| (f, self.clone()))?
+                    .clone();
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         "while".to_string(),
                         Variable::from_bool(Some(true)),
@@ -610,13 +726,20 @@ impl Command {
                     )
                     .map_err(|f| (f, self.clone()))?;
 
-                while script
-                    .get_var("while".to_string(), locals)
-                    .map_err(|f| (f, self.clone()))?
-                    .as_bool()
-                    .map_err(|f| (f, self.clone()))?
-                {
-                    func.execute(script, "while".to_string(), vec![], false)?;
+                loop {
+                    func.execute(script.clone(), "while".to_string(), vec![], false)?;
+
+                    let condition = script
+                        .lock()
+                        .unwrap()
+                        .get_var("while".to_string(), locals)
+                        .map_err(|f| (f, self.clone()))?
+                        .as_bool()
+                        .map_err(|f| (f, self.clone()))?;
+
+                    if !condition {
+                        break;
+                    }
                 }
             }
             CommandType::Equals => {
@@ -624,12 +747,20 @@ impl Command {
                 let other_var = self.args[1].clone();
                 let result_var = self.args[2].clone();
 
-                let var = script.get_var(var, locals).map_err(|f| (f, self.clone()))?;
+                let var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(var, locals)
+                    .map_err(|f| (f, self.clone()))?;
                 let other_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(other_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(var == other_var)),
@@ -644,8 +775,14 @@ impl Command {
                 let other_var = self.args[1].clone();
                 let result_var = self.args[2].clone();
 
-                let var = script.get_var(var, locals).map_err(|f| (f, self.clone()))?;
+                let var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(var, locals)
+                    .map_err(|f| (f, self.clone()))?;
                 let other_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(other_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -684,6 +821,8 @@ impl Command {
                 };
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(result)),
@@ -698,8 +837,14 @@ impl Command {
                 let other_var = self.args[1].clone();
                 let result_var = self.args[2].clone();
 
-                let var = script.get_var(var, locals).map_err(|f| (f, self.clone()))?;
+                let var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(var, locals)
+                    .map_err(|f| (f, self.clone()))?;
                 let other_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(other_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -738,6 +883,8 @@ impl Command {
                 };
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(result)),
@@ -753,17 +900,23 @@ impl Command {
                 let result_var = self.args[2].clone();
 
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_bool()
                     .map_err(|f| (f, self.clone()))?;
                 let other_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(other_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_bool()
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(var && other_var)),
@@ -779,17 +932,23 @@ impl Command {
                 let result_var = self.args[2].clone();
 
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_bool()
                     .map_err(|f| (f, self.clone()))?;
                 let other_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(other_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_bool()
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(var || other_var)),
@@ -804,12 +963,16 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_bool()
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(!var)),
@@ -824,17 +987,21 @@ impl Command {
                 let func_name = self.args[1].clone();
 
                 let func = script
+                    .lock()
+                    .unwrap()
                     .get_function(func_name)
                     .map_err(|f| (f, self.clone()))?;
 
                 let bool_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(bool_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_bool()
                     .map_err(|f| (f, self.clone()))?;
 
                 if bool_var {
-                    func.execute(script, "null".to_string(), vec![], false)?;
+                    func.execute(script.clone(), "null".to_string(), vec![], false)?;
                 }
             }
             CommandType::HasStr => {
@@ -843,17 +1010,23 @@ impl Command {
                 let result_var = self.args[2].clone();
 
                 let string_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(string_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_str()
                     .map_err(|f| (f, self.clone()))?;
                 let substring = script
+                    .lock()
+                    .unwrap()
                     .get_var(substring, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_str()
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(string_var.contains(&substring))),
@@ -869,15 +1042,21 @@ impl Command {
                 let result_var = self.args[2].clone();
 
                 let list_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(list_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_list()
                     .map_err(|f| (f, self.clone()))?;
                 let item_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(item_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(list_var.contains(&item_var))),
@@ -894,14 +1073,20 @@ impl Command {
                 let result_var = self.args[3].clone();
 
                 let map_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(map_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_map()
                     .map_err(|f| (f, self.clone()))?;
                 let key_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(key_var, locals)
                     .map_err(|f| (f, self.clone()))?;
                 let value_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(value_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -915,6 +1100,8 @@ impl Command {
                 }
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(has)),
@@ -930,11 +1117,15 @@ impl Command {
                 let result_var = self.args[2].clone();
 
                 let map_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(map_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_map()
                     .map_err(|f| (f, self.clone()))?;
                 let key_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(key_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -948,6 +1139,8 @@ impl Command {
                 }
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(has)),
@@ -963,11 +1156,15 @@ impl Command {
                 let result_var = self.args[2].clone();
 
                 let map_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(map_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_map()
                     .map_err(|f| (f, self.clone()))?;
                 let value_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(value_var, locals)
                     .map_err(|f| (f, self.clone()))?;
 
@@ -981,6 +1178,8 @@ impl Command {
                 }
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(has)),
@@ -995,12 +1194,16 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let optional_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(optional_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_option()
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         Variable::from_bool(Some(optional_var.is_some())),
@@ -1015,12 +1218,16 @@ impl Command {
                 let result_var = self.args[1].clone();
 
                 let optional_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(optional_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_option()
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         result_var,
                         optional_var
@@ -1038,6 +1245,8 @@ impl Command {
                 let time_var = self.args[0].clone();
 
                 let time_var = match script
+                    .lock()
+                    .unwrap()
                     .get_var(time_var, locals)
                     .map_err(|f| (f, self.clone()))?
                 {
@@ -1055,17 +1264,23 @@ impl Command {
                 let other_var = self.args[1].clone();
 
                 let other_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(other_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))?;
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(var_name.clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         var_name,
                         Variable::from_int(Some(var + other_var)),
@@ -1080,17 +1295,23 @@ impl Command {
                 let other_var = self.args[1].clone();
 
                 let other_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(other_var, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_float()
                     .map_err(|f| (f, self.clone()))?;
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(var_name.clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_float()
                     .map_err(|f| (f, self.clone()))?;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         var_name,
                         Variable::from_float(Some(var + other_var)),
@@ -1106,22 +1327,30 @@ impl Command {
                 let end_index = self.args[1].clone();
 
                 let str_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(str_var_name.clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_str()
                     .map_err(|f| (f, self.clone()))?;
                 let start_index = script
+                    .lock()
+                    .unwrap()
                     .get_var(start_index, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))? as usize;
                 let end_index = script
+                    .lock()
+                    .unwrap()
                     .get_var(end_index, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))? as usize;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         str_var_name,
                         Variable::from_str(Some(str_var[start_index..end_index].to_string())),
@@ -1137,20 +1366,28 @@ impl Command {
                 let end_index = self.args[1].clone();
 
                 let list_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(list_var_name.clone(), locals)
                     .map_err(|f| (f, self.clone()))?;
                 let start_index = script
+                    .lock()
+                    .unwrap()
                     .get_var(start_index, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))? as usize;
                 let end_index = script
+                    .lock()
+                    .unwrap()
                     .get_var(end_index, locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))? as usize;
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         list_var_name,
                         Variable::from_list(
@@ -1173,14 +1410,20 @@ impl Command {
                 let stream_var = self.args[2].clone();
 
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(name_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?;
                 let size_var = script
+                    .lock()
+                    .unwrap()
                     .get_var(size_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))?;
                 let stream = script
+                    .lock()
+                    .unwrap()
                     .get_var(stream_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_in_stream()
@@ -1190,6 +1433,8 @@ impl Command {
                 stream.lock().unwrap().read_exact(&mut buffer).unwrap();
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         name_var,
                         match var {
@@ -1222,9 +1467,13 @@ impl Command {
                 let stream_var = self.args[1].clone();
 
                 let var = script
+                    .lock()
+                    .unwrap()
                     .get_var(name_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?;
                 let stream = script
+                    .lock()
+                    .unwrap()
                     .get_var(stream_var.clone(), locals)
                     .map_err(|f| (f, self.clone()))?
                     .as_in_stream()
@@ -1234,6 +1483,8 @@ impl Command {
                 stream.lock().unwrap().read_to_end(&mut buffer).unwrap();
 
                 script
+                    .lock()
+                    .unwrap()
                     .set_var(
                         name_var,
                         match var {
@@ -1261,6 +1512,77 @@ impl Command {
                     )
                     .map_err(|f| (f, self.clone()))?;
             }
+            CommandType::PackOptional => {
+                let var = self.args[0].clone();
+                let result_var = self.args[1].clone();
+
+                let var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?;
+
+                let result = Variable::from_optional(Some(Some(var.clone())), var.get_type());
+
+                script
+                    .lock()
+                    .unwrap()
+                    .set_var(result_var, result, global, false, locals)
+                    .map_err(|f| (f, self.clone()))?;
+            }
+            CommandType::NoneOptional => {
+                let var_name = self.args[0].clone();
+
+                let var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(var_name.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?;
+
+                script
+                    .lock()
+                    .unwrap()
+                    .set_var(
+                        var_name,
+                        Variable::from_optional(
+                            Some(None),
+                            var.get_option_type().map_err(|f| (f, self.clone()))?,
+                        ),
+                        global,
+                        false,
+                        locals,
+                    )
+                    .map_err(|f| (f, self.clone()))?;
+            }
+            CommandType::NewThread => {
+                let func_name = self.args[0].clone();
+
+                let func = script
+                    .lock()
+                    .unwrap()
+                    .get_function(func_name)
+                    .map_err(|f| (f, self.clone()))?;
+
+                let local_script = script.clone();
+                thread::spawn(move || {
+                    match func.execute(local_script, "null".to_string(), vec![], false) {
+                        Ok(_) => {}
+                        Err((e, c)) => {
+                            println!("error ({:?}) command: {:?}", e, c);
+                        }
+                    };
+                });
+            }
+            CommandType::Import => {
+                let script_path_var = self.args[0].clone();
+
+                // TODO: write logic
+            }
+            CommandType::ImportText => {
+                let script_text_var = self.args[0].clone();
+
+                // TODO: write logic
+            }
             CommandType::OpenFileIn => {
                 let path_var = self.args[0].clone();
                 let stream_var = self.args[1].clone();
@@ -1285,11 +1607,6 @@ impl Command {
                 let addr_var = self.args[0].clone();
                 let port_var = self.args[1].clone();
                 let accept_func = self.args[2].clone();
-
-                // TODO: write logic
-            }
-            CommandType::NewThread => {
-                let func_name = self.args[0].clone();
 
                 // TODO: write logic
             }
