@@ -1,19 +1,16 @@
 INIT_VAR char space
 SET_VAR space 32
 
-INIT_VAR char new_line
 SET_VAR new_line 10
 
 INIT_VAR int one
 SET_VAR one 1
 
 FUNC null println text string # println function
+    TEMP_VAR char new_line 10 # init line break var
     ADD_STR text new_line     # add line break to text var
     WRITE text cout           # write text var to console
 FUNC_END                      # end println function
-
-
-# write hello world
 
 TEMP_VAR string text Hello World!
 USE_FUNC println null text
