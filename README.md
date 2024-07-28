@@ -193,14 +193,6 @@ FUNC_END
 | `READ_ALL`               | `name_var`, `stream_var` | Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `list[char]`/`string` |
 
 
-### Нетворк
-
-| Команда                  | Параметры  | Описание    |
-|--------------------------|------------|-------------|
-| `OPEN_TCP_CONNECTION`    | `addr_var`, `port_var`, `in_stream`, `out_stream` | Подключиться по `addr_var:port_var` (`addr_var: string`, `port_var: int`, `in_stream: in_stream`, `out_stream: out_stream` - переменные) и записать стримы для чтения и записи в `in_stream` и `out_stream` (КОМАНДА В РАЗРАБОТКЕ) |
-| `OPEN_TCP_LISTENER`      | `addr_var`, `port_var`, `accept_func(string,int,in_stream,out_stream)` | Ожидание подключений с `addr_var:port_var` (`addr_var: string`, `port_var: int` - переменные), при подключениях вызывается функция `accept_func` (КОМАНДА В РАЗРАБОТКЕ) |
-
-
 ### Файлы
 
 | Команда                  | Параметры  | Описание    |
@@ -215,6 +207,17 @@ FUNC_END
 |--------------------------|------------|-------------|
 | `SLEEP`                  | `time_var` | Ждать миллисекунд из переменной `time_var` (тип переменной: int) |
 | `NEW_THREAD`             | `func`     | Вызвать функцию `func` в новом потоке |
-| `IMPORT`                 | `script_path` | Импортировать код из скрипта по пути (путь должен быть с расширением файла) (путь это переменная) (КОМАНДА В РАЗРАБОТКЕ) |
-| `IMPORT_TEXT`            | `script_text_var` | Импортировать код из текста переменной в скрипт (КОМАНДА В РАЗРАБОТКЕ) |
 | `RANDOM`                 | `min_var`, `max_var`, `result_var` | Получить рандомное число от `min_var` до `max_var` включительно и записать в `result_var` |
+
+
+### Команды в разработке
+
+| Команда                  | Параметры  | Категория    | Описание    |
+|--------------------------|------------|--------------|-------------|
+| `FILE_EXISTS`            | `path_var`, `result_var` | Файлы | Узнать существует ли файл по пути `path_var` и записать результат в `result_var` (КОМАНДА В РАЗРАБОТКЕ) |
+| `IS_FOLDER`              | `path_var`, `result_var` | Файлы | Узнать является ли папкой `path_var` и записать результат в `result_var` (КОМАНДА В РАЗРАБОТКЕ) |
+| `FOLDER_LIST`            | `path_var`, `result_var` | Файлы | Получить все пути до файлов внутри папки `path_var` и записать результат в `result_var: list[string]` (КОМАНДА В РАЗРАБОТКЕ) |
+| `IMPORT`                 | `script_path` | Система | Импортировать код из скрипта по пути (путь должен быть с расширением файла) (путь это переменная) (КОМАНДА В РАЗРАБОТКЕ) |
+| `IMPORT_TEXT`            | `script_text_var` | Система | Импортировать код из текста переменной в скрипт (КОМАНДА В РАЗРАБОТКЕ) |
+| `OPEN_TCP_CONNECTION`    | `addr_var`, `port_var`, `in_stream`, `out_stream` | Нетворк | Подключиться по `addr_var:port_var` (`addr_var: string`, `port_var: int`, `in_stream: in_stream`, `out_stream: out_stream` - переменные) и записать стримы для чтения и записи в `in_stream` и `out_stream` (КОМАНДА В РАЗРАБОТКЕ) |
+| `OPEN_TCP_LISTENER`      | `addr_var`, `port_var`, `accept_func(string,int,in_stream,out_stream)` | Нетворк | Ожидание подключений с `addr_var:port_var` (`addr_var: string`, `port_var: int` - переменные), при подключениях вызывается функция `accept_func` (КОМАНДА В РАЗРАБОТКЕ) |

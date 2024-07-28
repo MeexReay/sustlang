@@ -365,6 +365,24 @@ pub enum CommandType {
     /// Название: RANDOM \
     /// Параметры: `min_var`, `max_var`, `result_var`
     Random,
+
+    /// Узнать существует ли файл по пути `path_var` и записать результат в `result_var`
+    ///
+    /// Название: FILE_EXISTS \
+    /// Параметры: `path_var`, `result_var`
+    FileExists,
+
+    /// Узнать является ли папкой `path_var` и записать результат в `result_var`
+    ///
+    /// Название: IS_FOLDER \
+    /// Параметры: `path_var`, `result_var`
+    IsFolder,
+
+    /// Получить все пути до файлов внутри папки `path_var` и записать результат в `result_var: list[string]`
+    ///
+    /// Название: FOLDER_LIST \
+    /// Параметры: `path_var`, `result_var`
+    FolderList,
 }
 
 impl CommandType {
@@ -431,6 +449,9 @@ impl CommandType {
             "IMPORT_TEXT" => Ok(CommandType::ImportText),
             "IMPORT" => Ok(CommandType::Import),
             "RANDOM" => Ok(CommandType::Random),
+            "FILE_EXISTS" => Ok(CommandType::FileExists),
+            "IS_FOLDER" => Ok(CommandType::IsFolder),
+            "FOLDER_LIST" => Ok(CommandType::FolderList),
             _ => Err(ScriptError::CommandUnknownError),
         }
     }
