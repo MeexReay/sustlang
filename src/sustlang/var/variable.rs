@@ -1,3 +1,12 @@
+use super::super::script::ScriptError;
+use super::var_type::VarType;
+
+use std::collections::HashMap;
+use std::hash::Hash;
+use std::io::{Read, Write};
+use std::ptr::hash;
+use std::sync::{Arc, Mutex};
+
 #[derive(Clone)]
 pub enum Variable {
     Bool(VarType, Option<bool>),

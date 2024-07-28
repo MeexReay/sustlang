@@ -1,3 +1,11 @@
+use super::super::command::Command;
+use super::super::script::{Function, Script, ScriptError};
+use super::super::var::{VarType, Variable};
+
+use std::collections::HashMap;
+use std::io::{Read, Write};
+use std::sync::{Arc, Mutex};
+
 pub struct RunningScript {
     main_function: Function,
     functions: Vec<Function>,
@@ -11,7 +19,7 @@ impl RunningScript {
             variables: HashMap::new(),
             main_function: Function::new(
                 "main".to_string(),
-                "null".to_string(),
+                VarType::Null,
                 HashMap::new(),
                 script.commands,
             ),
@@ -166,7 +174,7 @@ impl RunningScript {
         Err(ScriptError::UnknownVarError)
     }
 
-    fn set_var(
+    pub fn set_var(
         &mut self,
         name: String,
         value: Variable,
@@ -280,6 +288,9 @@ impl RunningScript {
     }
 
     pub fn run(&mut self) -> Result<(), (ScriptError, Command)> {
-        self.exec_commands(self.commands.clone(), true, &mut HashMap::new())
+        let globals = &mut self.variables.clone();
+        let main_function = self.main_function.clone();
+
+        main_function.execute(self, "null".to_string(), Vec::new(), globals, true)
     }
 }

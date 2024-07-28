@@ -1,1 +1,3 @@
-mod sustlang;
+pub mod sustlang;
+
+pub use sustlang::*;

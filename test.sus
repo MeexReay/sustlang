@@ -1,8 +1,6 @@
 INIT_VAR char space
 SET_VAR space 32
 
-SET_VAR new_line 10
-
 INIT_VAR int one
 SET_VAR one 1
 

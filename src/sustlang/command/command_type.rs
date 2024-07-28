@@ -1,3 +1,5 @@
+use super::super::script::ScriptError;
+
 #[derive(PartialEq, Clone, Debug, Copy, Hash)]
 pub enum CommandType {
     /// Инициализировать переменную `name_var` с типом `type_var`

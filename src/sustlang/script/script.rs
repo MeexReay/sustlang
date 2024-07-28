@@ -1,3 +1,9 @@
+use super::super::command::{Command, CommandType};
+use super::super::script::{Function, ScriptError};
+use super::super::var::VarType;
+
+use std::collections::HashMap;
+
 fn prepare_script(text: String) -> Vec<String> {
     text.lines()
         .map(|s| match s.split_once("#") {
@@ -98,8 +104,8 @@ fn cut_funcs(commands: &mut Vec<Command>) -> Result<Vec<Function>, (ScriptError,
 }
 
 pub struct Script {
-    commands: Vec<Command>,
-    functions: Vec<Function>,
+    pub commands: Vec<Command>,
+    pub functions: Vec<Function>,
 }
 
 impl Script {

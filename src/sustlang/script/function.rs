@@ -1,9 +1,16 @@
+use super::super::command::{Command, CommandType};
+use super::super::script::ScriptError;
+use super::super::var::{VarType, Variable};
+use super::RunningScript;
+
+use std::collections::HashMap;
+
 #[derive(PartialEq, Clone, Debug)]
 pub struct Function {
-    name: String,
-    result_type: VarType,
-    parameters: HashMap<String, VarType>,
-    commands: Vec<Command>,
+    pub name: String,
+    pub result_type: VarType,
+    pub parameters: HashMap<String, VarType>,
+    pub commands: Vec<Command>,
 }
 
 impl Function {
@@ -21,46 +28,53 @@ impl Function {
         }
     }
 
-    pub fn execute_function(
+    pub fn execute(
         &self,
-        function: Function,
+        script: &mut RunningScript,
         result_var: String,
         args: Vec<Variable>,
         globals: &mut HashMap<String, Variable>,
         is_global: bool,
-    ) -> Result<(), ScriptError> {
+    ) -> Result<(), (ScriptError, Command)> {
         let mut locals: HashMap<String, Variable> = HashMap::new();
         let mut index = 0;
-        for (k, _) in function.parameters {
+        for (k, _) in self.parameters.clone() {
             locals.insert(k, args[index].clone());
             index += 1;
         }
         locals.insert(
             "result".to_string(),
-            Variable::empty_var(function.result_type)?,
+            Variable::empty_var(self.result_type.clone()).unwrap(),
         );
 
         let mut temp_vars: Vec<String> = Vec::new();
 
-        for command in function.commands {
+        for command in self.commands.clone() {
             if let CommandType::Return = command.command_type {
                 return Ok(());
             }
 
-            self.exec_command(command.clone(), false, &mut locals, &mut temp_vars)?;
+            command
+                .execute(script, is_global, &mut locals, globals, &mut temp_vars)
+                .map_err(|f| (f, command.clone()))?;
 
             if let CommandType::TempVar = command.command_type {
                 continue;
             }
 
             for ele in temp_vars.clone() {
-                self.variables.remove(&ele);
+                script.drop_var(ele, &mut locals);
             }
         }
 
         if result_var != "null" {
-            self.variables
-                .insert(result_var, locals.get("result").unwrap().clone());
+            script.set_var(
+                result_var,
+                locals.get("result").unwrap().clone(),
+                is_global,
+                false,
+                &mut locals,
+            );
         }
 
         Ok(())

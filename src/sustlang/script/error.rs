@@ -1,3 +1,5 @@
+use std::{error::Error, fmt::Display};
+
 #[derive(Debug)]
 pub enum ScriptError {
     ParseVarError,

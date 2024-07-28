@@ -1,3 +1,5 @@
+use super::super::script::ScriptError;
+
 #[derive(PartialEq, Clone, Debug, Hash)]
 pub enum VarType {
     Bool,

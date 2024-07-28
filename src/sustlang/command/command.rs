@@ -1,8 +1,16 @@
+use super::super::command::CommandType;
+use super::super::script::{RunningScript, ScriptError};
+use super::super::var::{VarType, Variable};
+
+use std::collections::HashMap;
+use std::thread;
+use std::time::Duration;
+
 #[derive(PartialEq, Clone, Debug)]
 pub struct Command {
-    command_type: CommandType,
-    args: Vec<String>,
-    line: usize,
+    pub command_type: CommandType,
+    pub args: Vec<String>,
+    pub line: usize,
 }
 
 impl Command {
@@ -14,20 +22,21 @@ impl Command {
         }
     }
 
-    fn execute(
+    pub fn execute(
         &self,
+        script: &mut RunningScript,
         global: bool,
         locals: &mut HashMap<String, Variable>,
         globals: &mut HashMap<String, Variable>,
         temp_vars: &mut Vec<String>,
     ) -> Result<(), ScriptError> {
-        match command.command_type {
+        match self.command_type {
             CommandType::InitVar => {
-                let type_var = command.args[0].clone();
+                let type_var = self.args[0].clone();
                 let type_var = VarType::from_name(&type_var)?;
-                let name_var = command.args[1].clone();
+                let name_var = self.args[1].clone();
 
-                self.set_var(
+                script.set_var(
                     name_var,
                     Variable::empty_var(type_var)?,
                     global,
@@ -36,22 +45,22 @@ impl Command {
                 )?;
             }
             CommandType::SetVar => {
-                let name_var = command.args[0].clone();
-                let value_var = command.args[1..].join(" ");
+                let name_var = self.args[0].clone();
+                let value_var = self.args[1..].join(" ");
 
-                let type_var = self
+                let type_var = script
                     .get_var(name_var.clone(), &mut locals.clone())?
                     .get_type();
                 let var = Variable::parse_var(type_var, value_var)?;
 
-                self.set_var(name_var, var, global, false, locals)?;
+                script.set_var(name_var, var, global, false, locals)?;
             }
             CommandType::TempVar => {
-                let type_var = command.args[0].clone();
-                let name_var = command.args[1].clone();
-                let value_var = command.args[2..].join(" ");
+                let type_var = self.args[0].clone();
+                let name_var = self.args[1].clone();
+                let value_var = self.args[2..].join(" ");
 
-                self.set_var(
+                script.set_var(
                     name_var.clone(),
                     Variable::parse_var(VarType::from_name(&type_var)?, value_var)?,
                     global,
@@ -62,34 +71,34 @@ impl Command {
                 temp_vars.push(name_var);
             }
             CommandType::MoveVar => {
-                let source_var = command.args[0].clone();
-                let target_var = command.args[1].clone();
+                let source_var = self.args[0].clone();
+                let target_var = self.args[1].clone();
 
-                let var = self.get_var(source_var.clone(), locals)?;
+                let var = script.get_var(source_var.clone(), locals)?;
 
-                self.set_var(target_var, var, global, false, locals)?;
-                self.drop_var(source_var, locals)?;
+                script.set_var(target_var, var, global, false, locals)?;
+                script.drop_var(source_var, locals)?;
             }
             CommandType::CopyVar => {
-                let source_var = command.args[0].clone();
-                let target_var = command.args[1].clone();
+                let source_var = self.args[0].clone();
+                let target_var = self.args[1].clone();
 
-                let var = self.get_var(source_var.clone(), locals)?;
+                let var = script.get_var(source_var.clone(), locals)?;
 
-                self.set_var(target_var, var, global, false, locals)?;
+                script.set_var(target_var, var, global, false, locals)?;
             }
             CommandType::DropVar => {
-                let name_var = command.args[0].clone();
+                let name_var = self.args[0].clone();
 
-                self.drop_var(name_var, locals)?;
+                script.drop_var(name_var, locals)?;
             }
             CommandType::HasVar => {
-                let name_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let name_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let result = self.get_var(name_var, locals).is_ok();
+                let result = script.get_var(name_var, locals).is_ok();
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(result)),
                     global,
@@ -98,10 +107,10 @@ impl Command {
                 )?;
             }
             CommandType::AddStr => {
-                let var_name = command.args[0].clone();
-                let other_var = command.args[1].clone();
+                let var_name = self.args[0].clone();
+                let other_var = self.args[1].clone();
 
-                let other_var = self.get_var(other_var.clone(), locals)?;
+                let other_var = script.get_var(other_var.clone(), locals)?;
                 let other_var: String = if let Variable::List(VarType::Char, Some(list)) = other_var
                 {
                     let mut bytes = Vec::new();
@@ -117,9 +126,9 @@ impl Command {
                     return Err(ScriptError::TypeMismatchError);
                 };
 
-                let var = self.get_var(var_name.clone(), locals)?.as_str()?;
+                let var = script.get_var(var_name.clone(), locals)?.as_str()?;
 
-                self.set_var(
+                script.set_var(
                     var_name,
                     Variable::from_str(Some(var + &other_var)),
                     global,
@@ -128,10 +137,10 @@ impl Command {
                 )?;
             }
             CommandType::Write => {
-                let name_var = command.args[0].clone();
-                let stream_var = command.args[1].clone();
+                let name_var = self.args[0].clone();
+                let stream_var = self.args[1].clone();
 
-                let text = self.get_var(name_var.clone(), locals)?;
+                let text = script.get_var(name_var.clone(), locals)?;
                 let text: Vec<u8> = if let Variable::List(VarType::Char, Some(list)) = text {
                     let mut bytes = Vec::new();
                     for ele in list {
@@ -146,50 +155,56 @@ impl Command {
                     return Err(ScriptError::TypeMismatchError);
                 };
 
-                let stream = self.get_var(stream_var.clone(), locals)?.as_out_stream()?;
+                let stream = script
+                    .get_var(stream_var.clone(), locals)?
+                    .as_out_stream()?;
                 stream.lock().unwrap().write_all(&text).unwrap();
             }
             CommandType::UseFunc => {
-                let func_name = command.args[0].clone();
-                let result_name = command.args[1].clone();
-                let args_names = command.args[2..].to_vec();
+                let func_name = self.args[0].clone();
+                let result_name = self.args[1].clone();
+                let args_names = self.args[2..].to_vec();
 
-                let func = self.get_function(func_name).unwrap();
+                let func = script.get_function(func_name)?;
 
                 let mut args = Vec::new();
                 for name in args_names {
-                    args.push(self.get_var(name, locals)?);
+                    args.push(script.get_var(name, locals)?);
                 }
 
-                self.exec_function(func, result_name, args)?;
+                func.execute(script, result_name, args, globals, global)
+                    .map_err(|f| f.0)?;
             }
             CommandType::Return => {
                 return Ok(());
             }
             CommandType::For => {
-                let func_name = command.args[0].clone();
-                let start_index = self.get_var(command.args[1].clone(), locals)?.as_int()?;
-                let end_index = self.get_var(command.args[2].clone(), locals)?.as_int()?;
+                let func_name = self.args[0].clone();
+                let start_index = script.get_var(self.args[1].clone(), locals)?.as_int()?;
+                let end_index = script.get_var(self.args[2].clone(), locals)?.as_int()?;
 
-                let func = self.get_function(func_name).unwrap();
+                let func = script.get_function(func_name)?;
 
                 for index in start_index..=end_index {
-                    self.exec_function(
-                        func.clone(),
+                    func.execute(
+                        script,
                         "null".to_string(),
                         vec![Variable::from_int(Some(index))],
-                    )?;
+                        globals,
+                        global,
+                    )
+                    .map_err(|f| f.0)?;
                 }
             }
             CommandType::ToString => {
-                let source_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let source_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let source_var = self.get_var(source_var, locals)?;
+                let source_var = script.get_var(source_var, locals)?;
 
                 let result = source_var.to_string()?;
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_str(Some(result)),
                     global,
@@ -198,10 +213,10 @@ impl Command {
                 )?;
             }
             CommandType::ToChars => {
-                let source_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let source_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let source_var = self.get_var(source_var, locals)?;
+                let source_var = script.get_var(source_var, locals)?;
 
                 let result = source_var
                     .as_str()?
@@ -212,13 +227,13 @@ impl Command {
                 let result =
                     Variable::from_list(Some(result), VarType::List(Box::new(VarType::Char)));
 
-                self.set_var(result_var, result, global, false, locals)?;
+                script.set_var(result_var, result, global, false, locals)?;
             }
             CommandType::ToInteger => {
-                let source_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let source_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let source_var = self.get_var(source_var, locals)?;
+                let source_var = script.get_var(source_var, locals)?;
 
                 let result = source_var
                     .as_str()?
@@ -226,13 +241,13 @@ impl Command {
                     .or(Err(ScriptError::ParseVarError))?;
                 let result = Variable::from_int(Some(result));
 
-                self.set_var(result_var, result, global, false, locals)?;
+                script.set_var(result_var, result, global, false, locals)?;
             }
             CommandType::ToFloat => {
-                let source_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let source_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let source_var = self.get_var(source_var, locals)?;
+                let source_var = script.get_var(source_var, locals)?;
 
                 let result = source_var
                     .as_str()?
@@ -240,13 +255,13 @@ impl Command {
                     .or(Err(ScriptError::ParseVarError))?;
                 let result = Variable::from_float(Some(result));
 
-                self.set_var(result_var, result, global, false, locals)?;
+                script.set_var(result_var, result, global, false, locals)?;
             }
             CommandType::ToBool => {
-                let source_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let source_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let source_var = self.get_var(source_var, locals)?;
+                let source_var = script.get_var(source_var, locals)?;
 
                 let result = if let Variable::List(_, Some(value)) = source_var {
                     !value.is_empty()
@@ -274,7 +289,7 @@ impl Command {
                     false
                 };
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(result)),
                     global,
@@ -283,10 +298,10 @@ impl Command {
                 )?;
             }
             CommandType::ToChar => {
-                let source_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let source_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let source_var = self.get_var(source_var, locals)?;
+                let source_var = script.get_var(source_var, locals)?;
 
                 let result = if let Variable::String(_, Some(value)) = source_var {
                     value.as_bytes()[0]
@@ -298,7 +313,7 @@ impl Command {
                     return Err(ScriptError::TypeMismatchError);
                 };
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_char(Some(result)),
                     global,
@@ -307,12 +322,12 @@ impl Command {
                 )?;
             }
             CommandType::GetSymbol => {
-                let str_var = command.args[0].clone();
-                let index_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let str_var = self.args[0].clone();
+                let index_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let str_var = self.get_var(str_var, locals)?;
-                let index_var = self.get_var(index_var, locals)?;
+                let str_var = script.get_var(str_var, locals)?;
+                let index_var = script.get_var(index_var, locals)?;
 
                 let index = index_var.as_int()?;
 
@@ -322,7 +337,7 @@ impl Command {
                     return Err(ScriptError::TypeMismatchError);
                 };
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_char(Some(result)),
                     global,
@@ -331,12 +346,12 @@ impl Command {
                 )?;
             }
             CommandType::GetItem => {
-                let list_var = command.args[0].clone();
-                let index_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let list_var = self.args[0].clone();
+                let index_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let list_var = self.get_var(list_var, locals)?;
-                let index_var = self.get_var(index_var, locals)?;
+                let list_var = script.get_var(list_var, locals)?;
+                let index_var = script.get_var(index_var, locals)?;
 
                 let index = index_var.as_int()?;
 
@@ -346,15 +361,15 @@ impl Command {
                     return Err(ScriptError::TypeMismatchError);
                 };
 
-                self.set_var(result_var, result, global, false, locals)?;
+                script.set_var(result_var, result, global, false, locals)?;
             }
             CommandType::GetValue => {
-                let map_var = command.args[0].clone();
-                let key_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let map_var = self.args[0].clone();
+                let key_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let map_var = self.get_var(map_var, locals)?;
-                let key_var = self.get_var(key_var, locals)?;
+                let map_var = script.get_var(map_var, locals)?;
+                let key_var = script.get_var(key_var, locals)?;
 
                 let result = if let Variable::Map(_, Some(value)) = map_var {
                     value[&key_var].clone()
@@ -362,16 +377,16 @@ impl Command {
                     return Err(ScriptError::TypeMismatchError);
                 };
 
-                self.set_var(result_var, result, global, false, locals)?;
+                script.set_var(result_var, result, global, false, locals)?;
             }
             CommandType::ListSize => {
-                let list_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let list_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let list_var = self.get_var(list_var, locals)?;
+                let list_var = script.get_var(list_var, locals)?;
                 let list_size = list_var.as_list()?.len();
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_int(Some(list_size as isize)),
                     global,
@@ -380,13 +395,13 @@ impl Command {
                 )?;
             }
             CommandType::MapSize => {
-                let map_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let map_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let map_var = self.get_var(map_var, locals)?;
+                let map_var = script.get_var(map_var, locals)?;
                 let map_size = map_var.as_list()?.len();
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_int(Some(map_size as isize)),
                     global,
@@ -395,13 +410,13 @@ impl Command {
                 )?;
             }
             CommandType::StringSize => {
-                let string_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let string_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let string_var = self.get_var(string_var, locals)?;
+                let string_var = script.get_var(string_var, locals)?;
                 let string_size = string_var.as_list()?.len();
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_int(Some(string_size as isize)),
                     global,
@@ -410,54 +425,59 @@ impl Command {
                 )?;
             }
             CommandType::ForMap => {
-                let func_name = command.args[0].clone();
-                let map_var = command.args[1].clone();
+                let func_name = self.args[0].clone();
+                let map_var = self.args[1].clone();
 
-                let map_var = self.get_var(map_var, locals)?;
+                let map_var = script.get_var(map_var, locals)?;
                 let map_var = map_var.as_map()?;
 
-                let func = self.get_function(func_name).unwrap();
+                let func = script.get_function(func_name)?;
 
                 for (k, v) in map_var {
-                    self.exec_function(func.clone(), "null".to_string(), vec![k, v])?;
+                    func.execute(script, "null".to_string(), vec![k, v], globals, global)
+                        .map_err(|f| f.0)?;
                 }
             }
             CommandType::ForList => {
-                let func_name = command.args[0].clone();
-                let list_var = command.args[1].clone();
+                let func_name = self.args[0].clone();
+                let list_var = self.args[1].clone();
 
-                let list_var = self.get_var(list_var, locals)?;
+                let list_var = script.get_var(list_var, locals)?;
                 let list_var = list_var.as_list()?;
 
-                let func = self.get_function(func_name).unwrap();
+                let func = script.get_function(func_name)?;
 
                 for i in list_var {
-                    self.exec_function(func.clone(), "null".to_string(), vec![i])?;
+                    func.execute(script, "null".to_string(), vec![i], globals, global)
+                        .map_err(|f| f.0)?;
                 }
             }
             CommandType::ForString => {
-                let func_name = command.args[0].clone();
-                let string_var = command.args[1].clone();
+                let func_name = self.args[0].clone();
+                let string_var = self.args[1].clone();
 
-                let string_var = self.get_var(string_var, locals)?;
+                let string_var = script.get_var(string_var, locals)?;
                 let string_var = string_var.as_str()?;
 
-                let func = self.get_function(func_name).unwrap();
+                let func = script.get_function(func_name)?;
 
                 for c in string_var.as_bytes() {
-                    self.exec_function(
-                        func.clone(),
+                    func.execute(
+                        script,
                         "null".to_string(),
                         vec![Variable::from_char(Some(*c))],
-                    )?;
+                        globals,
+                        global,
+                    )
+                    .map_err(|f| f.0)?;
                 }
             }
             CommandType::While => {
-                let func_name = command.args[0].clone();
+                let func_name = self.args[0].clone();
 
-                let func = self.get_function(func_name).unwrap();
+                let func = script.get_function(func_name)?;
 
-                self.set_var(
+                script.set_var(
                     "while".to_string(),
                     Variable::from_bool(Some(true)),
                     global,
@@ -465,19 +485,20 @@ impl Command {
                     locals,
                 )?;
 
-                while self.get_var("while".to_string(), locals)?.as_bool()? {
-                    self.exec_function(func.clone(), "while".to_string(), vec![])?;
+                while script.get_var("while".to_string(), locals)?.as_bool()? {
+                    func.execute(script, "while".to_string(), vec![], globals, global)
+                        .map_err(|f| f.0)?;
                 }
             }
             CommandType::Equals => {
-                let var = command.args[0].clone();
-                let other_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let var = self.args[0].clone();
+                let other_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let var = self.get_var(var, locals)?;
-                let other_var = self.get_var(other_var, locals)?;
+                let var = script.get_var(var, locals)?;
+                let other_var = script.get_var(other_var, locals)?;
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(var == other_var)),
                     global,
@@ -486,12 +507,12 @@ impl Command {
                 )?;
             }
             CommandType::More => {
-                let var = command.args[0].clone();
-                let other_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let var = self.args[0].clone();
+                let other_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let var = self.get_var(var, locals)?;
-                let other_var = self.get_var(other_var, locals)?;
+                let var = script.get_var(var, locals)?;
+                let other_var = script.get_var(other_var, locals)?;
 
                 let result = if let Variable::Float(_, Some(v1)) = var {
                     if let Variable::Float(_, Some(v2)) = other_var {
@@ -527,7 +548,7 @@ impl Command {
                     return Err(ScriptError::TypeMismatchError);
                 };
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(result)),
                     global,
@@ -536,12 +557,12 @@ impl Command {
                 )?;
             }
             CommandType::Less => {
-                let var = command.args[0].clone();
-                let other_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let var = self.args[0].clone();
+                let other_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let var = self.get_var(var, locals)?;
-                let other_var = self.get_var(other_var, locals)?;
+                let var = script.get_var(var, locals)?;
+                let other_var = script.get_var(other_var, locals)?;
 
                 let result = if let Variable::Float(_, Some(v1)) = var {
                     if let Variable::Float(_, Some(v2)) = other_var {
@@ -577,7 +598,7 @@ impl Command {
                     return Err(ScriptError::TypeMismatchError);
                 };
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(result)),
                     global,
@@ -586,14 +607,14 @@ impl Command {
                 )?;
             }
             CommandType::And => {
-                let var = command.args[0].clone();
-                let other_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let var = self.args[0].clone();
+                let other_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let var = self.get_var(var, locals)?.as_bool()?;
-                let other_var = self.get_var(other_var, locals)?.as_bool()?;
+                let var = script.get_var(var, locals)?.as_bool()?;
+                let other_var = script.get_var(other_var, locals)?.as_bool()?;
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(var && other_var)),
                     global,
@@ -602,14 +623,14 @@ impl Command {
                 )?;
             }
             CommandType::Or => {
-                let var = command.args[0].clone();
-                let other_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let var = self.args[0].clone();
+                let other_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let var = self.get_var(var, locals)?.as_bool()?;
-                let other_var = self.get_var(other_var, locals)?.as_bool()?;
+                let var = script.get_var(var, locals)?.as_bool()?;
+                let other_var = script.get_var(other_var, locals)?.as_bool()?;
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(var || other_var)),
                     global,
@@ -618,12 +639,12 @@ impl Command {
                 )?;
             }
             CommandType::Not => {
-                let var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let var = self.get_var(var, locals)?.as_bool()?;
+                let var = script.get_var(var, locals)?.as_bool()?;
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(!var)),
                     global,
@@ -632,26 +653,27 @@ impl Command {
                 )?;
             }
             CommandType::If => {
-                let bool_var = command.args[0].clone();
-                let func_name = command.args[1].clone();
+                let bool_var = self.args[0].clone();
+                let func_name = self.args[1].clone();
 
-                let func = self.get_function(func_name).unwrap();
+                let func = script.get_function(func_name)?;
 
-                let bool_var = self.get_var(bool_var, locals)?.as_bool()?;
+                let bool_var = script.get_var(bool_var, locals)?.as_bool()?;
 
                 if bool_var {
-                    self.exec_function(func, "null".to_string(), vec![])?;
+                    func.execute(script, "null".to_string(), vec![], globals, global)
+                        .map_err(|f| f.0)?;
                 }
             }
             CommandType::HasStr => {
-                let string_var = command.args[0].clone();
-                let substring = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let string_var = self.args[0].clone();
+                let substring = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let string_var = self.get_var(string_var, locals)?.as_str()?;
-                let substring = self.get_var(substring, locals)?.as_str()?;
+                let string_var = script.get_var(string_var, locals)?.as_str()?;
+                let substring = script.get_var(substring, locals)?.as_str()?;
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(string_var.contains(&substring))),
                     global,
@@ -660,14 +682,14 @@ impl Command {
                 )?;
             }
             CommandType::HasItem => {
-                let list_var = command.args[0].clone();
-                let item_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let list_var = self.args[0].clone();
+                let item_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let list_var = self.get_var(list_var, locals)?.as_list()?;
-                let item_var = self.get_var(item_var, locals)?;
+                let list_var = script.get_var(list_var, locals)?.as_list()?;
+                let item_var = script.get_var(item_var, locals)?;
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(list_var.contains(&item_var))),
                     global,
@@ -676,14 +698,14 @@ impl Command {
                 )?;
             }
             CommandType::HasEntry => {
-                let map_var = command.args[0].clone();
-                let key_var = command.args[1].clone();
-                let value_var = command.args[2].clone();
-                let result_var = command.args[3].clone();
+                let map_var = self.args[0].clone();
+                let key_var = self.args[1].clone();
+                let value_var = self.args[2].clone();
+                let result_var = self.args[3].clone();
 
-                let map_var = self.get_var(map_var, locals)?.as_map()?;
-                let key_var = self.get_var(key_var, locals)?;
-                let value_var = self.get_var(value_var, locals)?;
+                let map_var = script.get_var(map_var, locals)?.as_map()?;
+                let key_var = script.get_var(key_var, locals)?;
+                let value_var = script.get_var(value_var, locals)?;
 
                 let mut has = false;
 
@@ -694,7 +716,7 @@ impl Command {
                     }
                 }
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(has)),
                     global,
@@ -703,12 +725,12 @@ impl Command {
                 )?;
             }
             CommandType::HasKey => {
-                let map_var = command.args[0].clone();
-                let key_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let map_var = self.args[0].clone();
+                let key_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let map_var = self.get_var(map_var, locals)?.as_map()?;
-                let key_var = self.get_var(key_var, locals)?;
+                let map_var = script.get_var(map_var, locals)?.as_map()?;
+                let key_var = script.get_var(key_var, locals)?;
 
                 let mut has = false;
 
@@ -719,7 +741,7 @@ impl Command {
                     }
                 }
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(has)),
                     global,
@@ -728,12 +750,12 @@ impl Command {
                 )?;
             }
             CommandType::HasValue => {
-                let map_var = command.args[0].clone();
-                let value_var = command.args[1].clone();
-                let result_var = command.args[2].clone();
+                let map_var = self.args[0].clone();
+                let value_var = self.args[1].clone();
+                let result_var = self.args[2].clone();
 
-                let map_var = self.get_var(map_var, locals)?.as_map()?;
-                let value_var = self.get_var(value_var, locals)?;
+                let map_var = script.get_var(map_var, locals)?.as_map()?;
+                let value_var = script.get_var(value_var, locals)?;
 
                 let mut has = false;
 
@@ -744,7 +766,7 @@ impl Command {
                     }
                 }
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(has)),
                     global,
@@ -753,12 +775,12 @@ impl Command {
                 )?;
             }
             CommandType::HasOptional => {
-                let optional_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let optional_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let optional_var = self.get_var(optional_var, locals)?.as_option()?;
+                let optional_var = script.get_var(optional_var, locals)?.as_option()?;
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     Variable::from_bool(Some(optional_var.is_some())),
                     global,
@@ -767,12 +789,12 @@ impl Command {
                 )?;
             }
             CommandType::UnpackOptional => {
-                let optional_var = command.args[0].clone();
-                let result_var = command.args[1].clone();
+                let optional_var = self.args[0].clone();
+                let result_var = self.args[1].clone();
 
-                let optional_var = self.get_var(optional_var, locals)?.as_option()?;
+                let optional_var = script.get_var(optional_var, locals)?.as_option()?;
 
-                self.set_var(
+                script.set_var(
                     result_var,
                     optional_var
                         .ok_or(ScriptError::ParseVarError)?
@@ -784,9 +806,9 @@ impl Command {
                 )?;
             }
             CommandType::Sleep => {
-                let time_var = command.args[0].clone();
+                let time_var = self.args[0].clone();
 
-                let time_var = match self.get_var(time_var, locals)? {
+                let time_var = match script.get_var(time_var, locals)? {
                     Variable::Integer(_, Some(v)) => Duration::from_millis(v as u64),
                     Variable::Float(_, Some(v)) => Duration::from_millis(v as u64),
                     _ => {
@@ -797,13 +819,13 @@ impl Command {
                 thread::sleep(time_var);
             }
             CommandType::AddInt => {
-                let var_name = command.args[0].clone();
-                let other_var = command.args[1].clone();
+                let var_name = self.args[0].clone();
+                let other_var = self.args[1].clone();
 
-                let other_var = self.get_var(other_var, locals)?.as_int()?;
-                let var = self.get_var(var_name.clone(), locals)?.as_int()?;
+                let other_var = script.get_var(other_var, locals)?.as_int()?;
+                let var = script.get_var(var_name.clone(), locals)?.as_int()?;
 
-                self.set_var(
+                script.set_var(
                     var_name,
                     Variable::from_int(Some(var + other_var)),
                     global,
@@ -812,13 +834,13 @@ impl Command {
                 )?;
             }
             CommandType::AddFloat => {
-                let var_name = command.args[0].clone();
-                let other_var = command.args[1].clone();
+                let var_name = self.args[0].clone();
+                let other_var = self.args[1].clone();
 
-                let other_var = self.get_var(other_var, locals)?.as_float()?;
-                let var = self.get_var(var_name.clone(), locals)?.as_float()?;
+                let other_var = script.get_var(other_var, locals)?.as_float()?;
+                let var = script.get_var(var_name.clone(), locals)?.as_float()?;
 
-                self.set_var(
+                script.set_var(
                     var_name,
                     Variable::from_float(Some(var + other_var)),
                     global,
@@ -827,15 +849,15 @@ impl Command {
                 )?;
             }
             CommandType::SubStr => {
-                let str_var_name = command.args[0].clone();
-                let start_index = command.args[1].clone();
-                let end_index = command.args[1].clone();
+                let str_var_name = self.args[0].clone();
+                let start_index = self.args[1].clone();
+                let end_index = self.args[1].clone();
 
-                let str_var = self.get_var(str_var_name.clone(), locals)?.as_str()?;
-                let start_index = self.get_var(start_index, locals)?.as_int()? as usize;
-                let end_index = self.get_var(end_index, locals)?.as_int()? as usize;
+                let str_var = script.get_var(str_var_name.clone(), locals)?.as_str()?;
+                let start_index = script.get_var(start_index, locals)?.as_int()? as usize;
+                let end_index = script.get_var(end_index, locals)?.as_int()? as usize;
 
-                self.set_var(
+                script.set_var(
                     str_var_name,
                     Variable::from_str(Some(str_var[start_index..end_index].to_string())),
                     global,
@@ -844,15 +866,15 @@ impl Command {
                 )?;
             }
             CommandType::SubList => {
-                let list_var_name = command.args[0].clone();
-                let start_index = command.args[1].clone();
-                let end_index = command.args[1].clone();
+                let list_var_name = self.args[0].clone();
+                let start_index = self.args[1].clone();
+                let end_index = self.args[1].clone();
 
-                let list_var = self.get_var(list_var_name.clone(), locals)?;
-                let start_index = self.get_var(start_index, locals)?.as_int()? as usize;
-                let end_index = self.get_var(end_index, locals)?.as_int()? as usize;
+                let list_var = script.get_var(list_var_name.clone(), locals)?;
+                let start_index = script.get_var(start_index, locals)?.as_int()? as usize;
+                let end_index = script.get_var(end_index, locals)?.as_int()? as usize;
 
-                self.set_var(
+                script.set_var(
                     list_var_name,
                     Variable::from_list(
                         Some(list_var.as_list()?[start_index..end_index].to_vec()),
@@ -864,18 +886,18 @@ impl Command {
                 )?;
             }
             CommandType::Read => {
-                let name_var = command.args[0].clone();
-                let size_var = command.args[1].clone();
-                let stream_var = command.args[2].clone();
+                let name_var = self.args[0].clone();
+                let size_var = self.args[1].clone();
+                let stream_var = self.args[2].clone();
 
-                let var = self.get_var(name_var.clone(), locals)?;
-                let size_var = self.get_var(size_var.clone(), locals)?.as_int()?;
-                let stream = self.get_var(stream_var.clone(), locals)?.as_in_stream()?;
+                let var = script.get_var(name_var.clone(), locals)?;
+                let size_var = script.get_var(size_var.clone(), locals)?.as_int()?;
+                let stream = script.get_var(stream_var.clone(), locals)?.as_in_stream()?;
 
                 let mut buffer: Vec<u8> = Vec::with_capacity(size_var as usize);
                 stream.lock().unwrap().read_exact(&mut buffer).unwrap();
 
-                self.set_var(
+                script.set_var(
                     name_var,
                     match var {
                         Variable::List(VarType::Char, _) => Variable::from_list(
@@ -900,16 +922,16 @@ impl Command {
                 )?;
             }
             CommandType::ReadAll => {
-                let name_var = command.args[0].clone();
-                let stream_var = command.args[1].clone();
+                let name_var = self.args[0].clone();
+                let stream_var = self.args[1].clone();
 
-                let var = self.get_var(name_var.clone(), locals)?;
-                let stream = self.get_var(stream_var.clone(), locals)?.as_in_stream()?;
+                let var = script.get_var(name_var.clone(), locals)?;
+                let stream = script.get_var(stream_var.clone(), locals)?.as_in_stream()?;
 
                 let mut buffer: Vec<u8> = Vec::new();
                 stream.lock().unwrap().read_to_end(&mut buffer).unwrap();
 
-                self.set_var(
+                script.set_var(
                     name_var,
                     match var {
                         Variable::List(VarType::Char, _) => Variable::from_list(
@@ -934,34 +956,34 @@ impl Command {
                 )?;
             }
             CommandType::OpenFileIn => {
-                let path_var = command.args[0].clone();
-                let stream_var = command.args[1].clone();
+                let path_var = self.args[0].clone();
+                let stream_var = self.args[1].clone();
 
                 // TODO: write logic
             }
             CommandType::OpenFileOut => {
-                let path_var = command.args[0].clone();
-                let stream_var = command.args[1].clone();
+                let path_var = self.args[0].clone();
+                let stream_var = self.args[1].clone();
 
                 // TODO: write logic
             }
             CommandType::OpenTcpConnection => {
-                let addr_var = command.args[0].clone();
-                let port_var = command.args[1].clone();
-                let in_stream = command.args[2].clone();
-                let out_stream = command.args[3].clone();
+                let addr_var = self.args[0].clone();
+                let port_var = self.args[1].clone();
+                let in_stream = self.args[2].clone();
+                let out_stream = self.args[3].clone();
 
                 // TODO: write logic
             }
             CommandType::OpenTcpListener => {
-                let addr_var = command.args[0].clone();
-                let port_var = command.args[1].clone();
-                let accept_func = command.args[2].clone();
+                let addr_var = self.args[0].clone();
+                let port_var = self.args[1].clone();
+                let accept_func = self.args[2].clone();
 
                 // TODO: write logic
             }
             CommandType::NewThread => {
-                let func_name = command.args[0].clone();
+                let func_name = self.args[0].clone();
 
                 // TODO: write logic
             }
