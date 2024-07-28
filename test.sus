@@ -4,6 +4,9 @@ SET_VAR space 32
 INIT_VAR char new_line
 SET_VAR new_line 10
 
+INIT_VAR int one
+SET_VAR one 1
+
 FUNC null println text string # println function
     ADD_STR text new_line     # add line break to text var
     WRITE text cout           # write text var to console
@@ -48,25 +51,36 @@ DROP_VAR args_size
 
 
 FUNC null print_arg_finally
-    USE_FUNC println null now_arg
+    INIT_VAR string prefix
+    SET_VAR prefix  -
+    ADD_STR prefix space
+    ADD_STR prefix now_arg
+    USE_FUNC println null prefix
 FUNC_END
 
 FUNC null print_arg index integer
     INIT_VAR bool is_first
     SET_VAR is_first false
-    TEMP_VAR int first 0
+    TEMP_VAR integer first 0
     MORE index first is_first
     GET_ITEM args index now_arg
     IF is_first print_arg_finally
 FUNC_END
 
-TEMP_VAR string text Args:
-USE_FUNC println null text
+FUNC null print_args_list
+    TEMP_VAR string text Args:
+    USE_FUNC println null text
+    INIT_VAR integer end_index
+    LIST_SIZE args end_index
+    TEMP_VAR integer add -1
+    ADD_INT end_index add
+    TEMP_VAR integer start_index 0
+    FOR print_arg start_index end_index
+FUNC_END
 
+INIT_VAR integer args_size
+LIST_SIZE args args_size
 INIT_VAR string now_arg
-INIT_VAR integer end_index
-LIST_SIZE args end_index
-TEMP_VAR integer add -1
-ADD_INT end_index add
-TEMP_VAR integer start_index 0
-FOR print_arg start_index end_index
+INIT_VAR bool is_args_more_than_one
+MORE args_size one is_args_more_than_one
+IF is_args_more_than_one print_args_list

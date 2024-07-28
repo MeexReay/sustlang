@@ -16,13 +16,14 @@ use std::{
 pub enum ScriptError {
     ParseVarError,
     TypeUnknownError,
-    CommandUnknownError(usize),
-    CommandArgsInvalidError(usize),
+    CommandUnknownError,
+    CommandArgsInvalidError,
     UnknownVarError,
     TypeMismatchError,
     VarNotInitedError,
     StringUTF8Error,
     VarInitedError,
+    FunctionUnknownError,
 }
 
 impl Display for ScriptError {
@@ -92,12 +93,21 @@ impl VarType {
 
         match name {
             "bool" => Ok(VarType::Bool),
+            "b" => Ok(VarType::Bool),
             "string" => Ok(VarType::String),
+            "str" => Ok(VarType::String),
+            "s" => Ok(VarType::String),
             "integer" => Ok(VarType::Integer),
+            "int" => Ok(VarType::Integer),
+            "i" => Ok(VarType::Integer),
             "float" => Ok(VarType::Float),
+            "f" => Ok(VarType::Float),
             "char" => Ok(VarType::Char),
+            "c" => Ok(VarType::Char),
             "in_stream" => Ok(VarType::InStream),
+            "in" => Ok(VarType::InStream),
             "out_stream" => Ok(VarType::OutStream),
+            "out" => Ok(VarType::OutStream),
             "null" => Ok(VarType::Null),
             _ => Err(ScriptError::TypeUnknownError),
         }
@@ -378,7 +388,7 @@ impl Variable {
         }
     }
 
-    pub fn empty_var(var_type: VarType) -> Result<Variable, ScriptError> {
+    pub fn not_inited_var(var_type: VarType) -> Result<Variable, ScriptError> {
         match var_type {
             VarType::Bool => Ok(Variable::Bool(VarType::Bool, None)),
             VarType::String => Ok(Variable::String(VarType::String, None)),
@@ -392,6 +402,30 @@ impl Variable {
             VarType::Map(key_type, value_type) => {
                 Ok(Variable::Map(VarType::Map(key_type, value_type), None))
             }
+            VarType::InStream => Ok(Variable::InStream(VarType::InStream, None)),
+            VarType::OutStream => Ok(Variable::OutStream(VarType::OutStream, None)),
+            VarType::Null => Ok(Variable::Null(VarType::Null)),
+        }
+    }
+
+    pub fn empty_var(var_type: VarType) -> Result<Variable, ScriptError> {
+        match var_type {
+            VarType::Bool => Ok(Variable::Bool(VarType::Bool, None)),
+            VarType::String => Ok(Variable::String(VarType::String, None)),
+            VarType::Integer => Ok(Variable::Integer(VarType::Integer, None)),
+            VarType::Float => Ok(Variable::Float(VarType::Float, None)),
+            VarType::Char => Ok(Variable::Char(VarType::Char, None)),
+            VarType::Optional(optional_type) => Ok(Variable::Optional(
+                VarType::Optional(optional_type),
+                Some(None),
+            )),
+            VarType::List(value_type) => {
+                Ok(Variable::List(VarType::List(value_type), Some(Vec::new())))
+            }
+            VarType::Map(key_type, value_type) => Ok(Variable::Map(
+                VarType::Map(key_type, value_type),
+                Some(HashMap::new()),
+            )),
             VarType::InStream => Ok(Variable::InStream(VarType::InStream, None)),
             VarType::OutStream => Ok(Variable::OutStream(VarType::OutStream, None)),
             VarType::Null => Ok(Variable::Null(VarType::Null)),
@@ -941,7 +975,7 @@ pub enum CommandType {
 }
 
 impl CommandType {
-    pub fn from_name(name: &str, line: usize) -> Result<CommandType, ScriptError> {
+    pub fn from_name(name: &str) -> Result<CommandType, ScriptError> {
         match name {
             "INIT_VAR" => Ok(CommandType::InitVar),
             "SET_VAR" => Ok(CommandType::SetVar),
@@ -999,7 +1033,7 @@ impl CommandType {
             "HAS_VALUE" => Ok(CommandType::HasValue),
             "HAS_OPTIONAL" => Ok(CommandType::HasOptional),
             "UNPACK_OPTIONAL" => Ok(CommandType::UnpackOptional),
-            _ => Err(ScriptError::CommandUnknownError(line)),
+            _ => Err(ScriptError::CommandUnknownError),
         }
     }
 }
@@ -1061,7 +1095,7 @@ fn prepare_script(text: String) -> Vec<String> {
         .collect()
 }
 
-fn parse_commands(lines: Vec<String>) -> Result<Vec<Command>, ScriptError> {
+fn parse_commands(lines: Vec<String>) -> Result<Vec<Command>, (ScriptError, usize)> {
     let mut commands = Vec::new();
     let mut line_num = 0;
 
@@ -1074,7 +1108,7 @@ fn parse_commands(lines: Vec<String>) -> Result<Vec<Command>, ScriptError> {
 
         let params: Vec<String> = line.split(" ").map(|v| v.to_string()).collect();
 
-        let command_type = CommandType::from_name(&params[0], line_num)?;
+        let command_type = CommandType::from_name(&params[0]).map_err(|f| (f, line_num))?;
 
         let args = if params.is_empty() {
             Vec::new()
@@ -1088,7 +1122,7 @@ fn parse_commands(lines: Vec<String>) -> Result<Vec<Command>, ScriptError> {
     Ok(commands)
 }
 
-fn cut_funcs(commands: &mut Vec<Command>) -> Result<Vec<Function>, ScriptError> {
+fn cut_funcs(commands: &mut Vec<Command>) -> Result<Vec<Function>, (ScriptError, usize)> {
     let mut functions: Vec<Function> = Vec::new();
 
     let mut now_func: Option<Function> = None;
@@ -1115,14 +1149,18 @@ fn cut_funcs(commands: &mut Vec<Command>) -> Result<Vec<Function>, ScriptError> 
                     commands.remove(index);
 
                     let name = command.args[1].clone();
-                    let result_type = VarType::from_name(&command.args[0])?;
+                    let result_type =
+                        VarType::from_name(&command.args[0]).map_err(|f| (f, command.line))?;
                     let mut parameters = HashMap::new();
 
                     let mut param_key: Option<String> = None;
                     for i in &command.args[2..] {
                         match &param_key {
                             Some(key) => {
-                                parameters.insert(key.to_string(), VarType::from_name(i)?);
+                                parameters.insert(
+                                    key.to_string(),
+                                    VarType::from_name(i).map_err(|f| (f, command.line))?,
+                                );
                                 param_key = None;
                             }
                             None => {
@@ -1146,7 +1184,7 @@ pub struct Script {
 }
 
 impl Script {
-    pub fn parse(text: String) -> Result<Script, ScriptError> {
+    pub fn parse(text: String) -> Result<Script, (ScriptError, usize)> {
         let lines = prepare_script(text);
         let mut commands = parse_commands(lines)?;
         let functions = cut_funcs(&mut commands)?;
@@ -1424,13 +1462,13 @@ impl RunningScript {
         Err(ScriptError::UnknownVarError)
     }
 
-    pub fn get_function(&self, name: String) -> Option<Function> {
+    pub fn get_function(&self, name: String) -> Result<Function, ScriptError> {
         for func in &self.functions {
             if func.name == name {
-                return Some(func.clone());
+                return Ok(func.clone());
             }
         }
-        None
+        Err(ScriptError::FunctionUnknownError)
     }
 
     fn exec_command(

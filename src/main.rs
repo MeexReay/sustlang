@@ -12,7 +12,13 @@ fn main() {
     let filename = args[1].clone();
     let args = args[1..].to_vec();
 
-    let script = Script::parse(fs::read_to_string(filename).unwrap()).unwrap();
+    let script = match Script::parse(fs::read_to_string(filename).unwrap()) {
+        Ok(i) => i,
+        Err((e, c)) => {
+            println!("error ({:?}) line: {}", e, c);
+            return;
+        }
+    };
 
     let mut running_script = RunningScript::new(script);
     running_script
