@@ -1,7 +1,7 @@
 use super::super::command::{Command, CommandType};
-use super::super::script::ScriptError;
+use super::super::other::Pohuy;
 use super::super::var::{VarType, Variable};
-use super::RunningScript;
+use super::{RunningScript, ScriptError};
 
 use std::collections::HashMap;
 
@@ -33,7 +33,6 @@ impl Function {
         script: &mut RunningScript,
         result_var: String,
         args: Vec<Variable>,
-        globals: &mut HashMap<String, Variable>,
         is_global: bool,
     ) -> Result<(), (ScriptError, Command)> {
         let mut locals: HashMap<String, Variable> = HashMap::new();
@@ -54,27 +53,30 @@ impl Function {
                 return Ok(());
             }
 
-            command
-                .execute(script, is_global, &mut locals, globals, &mut temp_vars)
-                .map_err(|f| (f, command.clone()))?;
+            command.execute(script, is_global, &mut locals, &mut temp_vars)?;
 
             if let CommandType::TempVar = command.command_type {
                 continue;
             }
 
             for ele in temp_vars.clone() {
-                script.drop_var(ele, &mut locals);
+                script
+                    .drop_var(ele, &mut locals)
+                    .map_err(|f| (f, command.clone()))
+                    .pohuy();
             }
         }
 
         if result_var != "null" {
-            script.set_var(
-                result_var,
-                locals.get("result").unwrap().clone(),
-                is_global,
-                false,
-                &mut locals,
-            );
+            script
+                .set_var(
+                    result_var,
+                    locals.get("result").unwrap().clone(),
+                    is_global,
+                    false,
+                    &mut locals,
+                )
+                .unwrap();
         }
 
         Ok(())

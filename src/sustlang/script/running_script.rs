@@ -288,9 +288,8 @@ impl RunningScript {
     }
 
     pub fn run(&mut self) -> Result<(), (ScriptError, Command)> {
-        let globals = &mut self.variables.clone();
         let main_function = self.main_function.clone();
 
-        main_function.execute(self, "null".to_string(), Vec::new(), globals, true)
+        main_function.execute(self, "null".to_string(), Vec::new(), true)
     }
 }
