@@ -46,6 +46,8 @@ WRITE text cout
 | `TO_BOOL`             | `source_var`, `result_var` | Скопировать строку `source_var` (тип переменной: `string`/`integer`) в `result_var`, переводя в `bool` |
 | `TO_FLOAT`               | `source_var`, `result_var` | Скопировать строку `source_var` в `result_var`, переводя в `float` |
 | `GET_SYMBOL`             | `str_var`, `index_var`, `result_var` | Скопировать символ из строки `str_var` по индексу `index_var` и записать в `result_var` |
+| `GET_ITEM`               | `list_var`, `index_var`, `result_var` | Скопировать предмет из списка `str_var` по индексу `index_var` и записать в `result_var` |
+| `GET_VALUE`              | `map_var`, `key_var`, `result_var` | Скопировать предмет из мапы `map_var` по ключу `key_var` и записать в `result_var` |
 | `ADD_INT`                | `int_var1`, `int_var2` | Прибавить к числу `int_var1` значение `int_var2` |
 | `ADD_FLOAT`              | `float_var1`, `float_var2` | Прибавить к числу `float_var1` значение `float_var2` |
 | `ADD_STR`                | `str_var`, `value_var` | Прибавить к строке `str_var` значение `value_var` (может быть типа `string/char/list[char]`) |

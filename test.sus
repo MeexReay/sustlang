@@ -1,19 +1,72 @@
+INIT_VAR char space
+SET_VAR space 32
+
+INIT_VAR char new_line
+SET_VAR new_line 10
+
 FUNC null println text string # println function
-    TEMP_VAR char br 10       # line break var
-    ADD_STR text br           # add line break to text var
+    ADD_STR text new_line     # add line break to text var
     WRITE text cout           # write text var to console
 FUNC_END                      # end println function
 
-FUNC null hello_world index integer
-    USE_FUNC println null text
+
+# write hello world
+
+TEMP_VAR string text Hello World!
+USE_FUNC println null text
+
+
+
+
+# write args length
+
+INIT_VAR integer args_size
+    LIST_SIZE args args_size
+
+    TEMP_VAR integer add -1
+    ADD_INT args_size add
+
+    INIT_VAR string args_size_str
+        TO_STRING args_size args_size_str
+
+        INIT_VAR string args_size_str_formatted # create var
+            SET_VAR args_size_str_formatted     # init var with value
+
+            INIT_VAR string prefix
+                SET_VAR prefix Args length:
+
+                ADD_STR args_size_str_formatted prefix
+                ADD_STR args_size_str_formatted space
+                ADD_STR args_size_str_formatted args_size_str
+
+                USE_FUNC println null args_size_str_formatted
+            DROP_VAR prefix
+
+        DROP_VAR args_size_str_formatted
+    DROP_VAR args_size_str
+DROP_VAR args_size
+
+
+FUNC null print_arg_finally
+    USE_FUNC println null now_arg
 FUNC_END
 
-INIT_VAR string text
-SET_VAR text Hello World!
+FUNC null print_arg index integer
+    INIT_VAR bool is_first
+    SET_VAR is_first false
+    TEMP_VAR int first 0
+    MORE index first is_first
+    GET_ITEM args index now_arg
+    IF is_first print_arg_finally
+FUNC_END
 
-TEMP_VAR integer start_index 0 # temp vars can stack
-TEMP_VAR integer end_index 9
+TEMP_VAR string text Args:
+USE_FUNC println null text
 
-FOR hello_world start_index end_index
-
-DROP_VAR text
+INIT_VAR string now_arg
+INIT_VAR integer end_index
+LIST_SIZE args end_index
+TEMP_VAR integer add -1
+ADD_INT end_index add
+TEMP_VAR integer start_index 0
+FOR print_arg start_index end_index

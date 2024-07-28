@@ -18,5 +18,10 @@ fn main() {
     running_script
         .set_standard_vars(args, Box::new(stdout()), Box::new(stdin()))
         .unwrap();
-    running_script.run().unwrap();
+    match running_script.run() {
+        Ok(_) => {}
+        Err((e, c)) => {
+            println!("error ({:?}) command: {:?}", e, c);
+        }
+    };
 }
