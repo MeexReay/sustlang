@@ -1,0 +1,7 @@
+FUNC null fork
+    NEW_THREAD fork
+    NEW_THREAD fork
+    USE_FUNC fork null
+FUNC_END
+
+USE_FUNC fork null

@@ -37,9 +37,17 @@ impl Command {
     ) -> Result<(), (ScriptError, Command)> {
         match self.command_type {
             CommandType::InitVar => {
-                let type_var = self.args[0].clone();
+                let type_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
                 let type_var = VarType::from_name(&type_var).map_err(|f| (f, self.clone()))?;
-                let name_var = self.args[1].clone();
+                let name_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 script
                     .lock()
@@ -54,7 +62,11 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::SetVar => {
-                let name_var = self.args[0].clone();
+                let name_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
                 let value_var = self.args[1..].join(" ");
 
                 let type_var = script
@@ -73,8 +85,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::TempVar => {
-                let type_var = self.args[0].clone();
-                let name_var = self.args[1].clone();
+                let type_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let name_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
                 let value_var = self.args[2..].join(" ");
 
                 script
@@ -96,8 +116,16 @@ impl Command {
                 temp_vars.push(name_var);
             }
             CommandType::MoveVar => {
-                let source_var = self.args[0].clone();
-                let target_var = self.args[1].clone();
+                let source_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let target_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -117,8 +145,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::CopyVar => {
-                let source_var = self.args[0].clone();
-                let target_var = self.args[1].clone();
+                let source_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let target_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -133,7 +169,11 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::DropVar => {
-                let name_var = self.args[0].clone();
+                let name_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 script
                     .lock()
@@ -142,8 +182,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::HasVar => {
-                let name_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let name_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let result = script.lock().unwrap().get_var(name_var, locals).is_ok();
 
@@ -160,8 +208,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::AddStr => {
-                let var_name = self.args[0].clone();
-                let other_var = self.args[1].clone();
+                let var_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let other_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let other_var = script
                     .lock()
@@ -208,8 +264,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::Write => {
-                let name_var = self.args[0].clone();
-                let stream_var = self.args[1].clone();
+                let name_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let stream_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let text = script
                     .lock()
@@ -240,8 +304,16 @@ impl Command {
                 stream.lock().unwrap().write_all(&text).unwrap();
             }
             CommandType::UseFunc => {
-                let func_name = self.args[0].clone();
-                let result_name = self.args[1].clone();
+                let func_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_name = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
                 let args_names = self.args[2..].to_vec();
 
                 let func = script
@@ -267,18 +339,34 @@ impl Command {
                 return Ok(());
             }
             CommandType::For => {
-                let func_name = self.args[0].clone();
+                let func_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
                 let start_index = script
                     .lock()
                     .unwrap()
-                    .get_var(self.args[1].clone(), locals)
+                    .get_var(
+                        self.args
+                            .get(1)
+                            .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                            .clone(),
+                        locals,
+                    )
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))?;
                 let end_index = script
                     .lock()
                     .unwrap()
-                    .get_var(self.args[2].clone(), locals)
+                    .get_var(
+                        self.args
+                            .get(2)
+                            .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                            .clone(),
+                        locals,
+                    )
                     .map_err(|f| (f, self.clone()))?
                     .as_int()
                     .map_err(|f| (f, self.clone()))?;
@@ -299,8 +387,16 @@ impl Command {
                 }
             }
             CommandType::ToString => {
-                let source_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let source_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let source_var = script
                     .lock()
@@ -323,8 +419,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::ToChars => {
-                let source_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let source_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let source_var = script
                     .lock()
@@ -349,8 +453,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::ToInteger => {
-                let source_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let source_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let source_var = script
                     .lock()
@@ -373,8 +485,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::ToFloat => {
-                let source_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let source_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let source_var = script
                     .lock()
@@ -397,8 +517,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::ToBool => {
-                let source_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let source_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let source_var = script
                     .lock()
@@ -445,8 +573,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::ToChar => {
-                let source_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let source_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let source_var = script
                     .lock()
@@ -477,9 +613,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::GetSymbol => {
-                let str_var = self.args[0].clone();
-                let index_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let str_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let index_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let str_var = script
                     .lock()
@@ -513,9 +661,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::GetItem => {
-                let list_var = self.args[0].clone();
-                let index_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let list_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let index_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let list_var = script
                     .lock()
@@ -543,9 +703,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::GetValue => {
-                let map_var = self.args[0].clone();
-                let key_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let map_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let key_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let map_var = script
                     .lock()
@@ -571,8 +743,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::ListSize => {
-                let list_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let list_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let list_var = script
                     .lock()
@@ -594,8 +774,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::MapSize => {
-                let map_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let map_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let map_var = script
                     .lock()
@@ -617,8 +805,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::StringSize => {
-                let string_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let string_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let string_var = script
                     .lock()
@@ -640,8 +836,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::ForMap => {
-                let func_name = self.args[0].clone();
-                let map_var = self.args[1].clone();
+                let func_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let map_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let map_var = script
                     .lock()
@@ -661,8 +865,16 @@ impl Command {
                 }
             }
             CommandType::ForList => {
-                let func_name = self.args[0].clone();
-                let list_var = self.args[1].clone();
+                let func_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let list_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let list_var = script
                     .lock()
@@ -682,8 +894,16 @@ impl Command {
                 }
             }
             CommandType::ForString => {
-                let func_name = self.args[0].clone();
-                let string_var = self.args[1].clone();
+                let func_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let string_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let string_var = script
                     .lock()
@@ -708,7 +928,11 @@ impl Command {
                 }
             }
             CommandType::While => {
-                let func_name = self.args[0].clone();
+                let func_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let func = script
                     .lock()
@@ -746,9 +970,21 @@ impl Command {
                 }
             }
             CommandType::Equals => {
-                let var = self.args[0].clone();
-                let other_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let other_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -774,9 +1010,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::More => {
-                let var = self.args[0].clone();
-                let other_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let other_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -836,9 +1084,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::Less => {
-                let var = self.args[0].clone();
-                let other_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let other_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -898,9 +1158,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::And => {
-                let var = self.args[0].clone();
-                let other_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let other_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -930,9 +1202,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::Or => {
-                let var = self.args[0].clone();
-                let other_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let other_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -962,8 +1246,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::Not => {
-                let var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -986,8 +1278,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::If => {
-                let bool_var = self.args[0].clone();
-                let func_name = self.args[1].clone();
+                let bool_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let func_name = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let func = script
                     .lock()
@@ -1008,9 +1308,21 @@ impl Command {
                 }
             }
             CommandType::HasStr => {
-                let string_var = self.args[0].clone();
-                let substring = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let string_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let substring = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let string_var = script
                     .lock()
@@ -1040,9 +1352,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::HasItem => {
-                let list_var = self.args[0].clone();
-                let item_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let list_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let item_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let list_var = script
                     .lock()
@@ -1070,10 +1394,26 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::HasEntry => {
-                let map_var = self.args[0].clone();
-                let key_var = self.args[1].clone();
-                let value_var = self.args[2].clone();
-                let result_var = self.args[3].clone();
+                let map_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let key_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let value_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(3)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let map_var = script
                     .lock()
@@ -1115,9 +1455,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::HasKey => {
-                let map_var = self.args[0].clone();
-                let key_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let map_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let key_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let map_var = script
                     .lock()
@@ -1154,9 +1506,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::HasValue => {
-                let map_var = self.args[0].clone();
-                let value_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let map_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let value_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let map_var = script
                     .lock()
@@ -1193,8 +1557,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::HasOptional => {
-                let optional_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let optional_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let optional_var = script
                     .lock()
@@ -1217,8 +1589,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::UnpackOptional => {
-                let optional_var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let optional_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let optional_var = script
                     .lock()
@@ -1245,7 +1625,11 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::Sleep => {
-                let time_var = self.args[0].clone();
+                let time_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let time_var = match script
                     .lock()
@@ -1263,8 +1647,16 @@ impl Command {
                 thread::sleep(time_var);
             }
             CommandType::AddInt => {
-                let var_name = self.args[0].clone();
-                let other_var = self.args[1].clone();
+                let var_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let other_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let other_var = script
                     .lock()
@@ -1294,8 +1686,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::AddFloat => {
-                let var_name = self.args[0].clone();
-                let other_var = self.args[1].clone();
+                let var_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let other_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let other_var = script
                     .lock()
@@ -1325,9 +1725,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::SubStr => {
-                let str_var_name = self.args[0].clone();
-                let start_index = self.args[1].clone();
-                let end_index = self.args[1].clone();
+                let str_var_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let start_index = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let end_index = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let str_var = script
                     .lock()
@@ -1364,9 +1776,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::SubList => {
-                let list_var_name = self.args[0].clone();
-                let start_index = self.args[1].clone();
-                let end_index = self.args[1].clone();
+                let list_var_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let start_index = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let end_index = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let list_var = script
                     .lock()
@@ -1408,9 +1832,21 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::Read => {
-                let name_var = self.args[0].clone();
-                let size_var = self.args[1].clone();
-                let stream_var = self.args[2].clone();
+                let name_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let size_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let stream_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -1466,8 +1902,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::ReadAll => {
-                let name_var = self.args[0].clone();
-                let stream_var = self.args[1].clone();
+                let name_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let stream_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -1516,8 +1960,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::PackOptional => {
-                let var = self.args[0].clone();
-                let result_var = self.args[1].clone();
+                let var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -1534,7 +1986,11 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::NoneOptional => {
-                let var_name = self.args[0].clone();
+                let var_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let var = script
                     .lock()
@@ -1558,7 +2014,11 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::NewThread => {
-                let func_name = self.args[0].clone();
+                let func_name = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let func = script
                     .lock()
@@ -1577,9 +2037,21 @@ impl Command {
                 });
             }
             CommandType::Random => {
-                let min_var = self.args[0].clone();
-                let max_var = self.args[1].clone();
-                let result_var = self.args[2].clone();
+                let min_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let max_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let result_var = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let min_var = script
                     .lock()
@@ -1612,18 +2084,34 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::Import => {
-                let script_path_var = self.args[0].clone();
+                let script_path_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 // TODO: write logic
             }
             CommandType::ImportText => {
-                let script_text_var = self.args[0].clone();
+                let script_text_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 // TODO: write logic
             }
             CommandType::OpenFileIn => {
-                let path_var = self.args[0].clone();
-                let stream_var = self.args[1].clone();
+                let path_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let stream_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let path_var = script
                     .lock()
@@ -1651,8 +2139,16 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::OpenFileOut => {
-                let path_var = self.args[0].clone();
-                let stream_var = self.args[1].clone();
+                let path_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let stream_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 let path_var = script
                     .lock()
@@ -1679,17 +2175,45 @@ impl Command {
                     .map_err(|f| (f, self.clone()))?;
             }
             CommandType::OpenTcpConnection => {
-                let addr_var = self.args[0].clone();
-                let port_var = self.args[1].clone();
-                let in_stream = self.args[2].clone();
-                let out_stream = self.args[3].clone();
+                let addr_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let port_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let in_stream = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let out_stream = self
+                    .args
+                    .get(3)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 // TODO: write logic
             }
             CommandType::OpenTcpListener => {
-                let addr_var = self.args[0].clone();
-                let port_var = self.args[1].clone();
-                let accept_func = self.args[2].clone();
+                let addr_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let port_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let accept_func = self
+                    .args
+                    .get(2)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
 
                 // TODO: write logic
             }

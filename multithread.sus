@@ -1,4 +1,4 @@
-FUNC null println text string # println function
+FUNC null println text string
     TEMP_VAR char new_line 10
     ADD_STR text new_line
     WRITE text cout
