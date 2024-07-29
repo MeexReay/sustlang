@@ -72,9 +72,9 @@ DROP_VAR text        # дропнуть переменную
 | `integer`              | `SET_VAR var 123`                  | `123`                    |
 | `float`                | `SET_VAR var 14.48`                | `14.48`                  |
 | `char`                 | `SET_VAR var 255`                  | `0 - 255`                |
-| `list[type]`           | `SET_VAR var.0 value`              | `value`                  |
+| `list[type]`           | `SET_VAR var.index value`              | `value`                  |
 | `map[key_type,value_type]` | `SET_VAR var.key value`         | `value`                  |
-| `optional[type]`       | `SET_VAR var (value)`              | `(value)` / `null`       |
+| `optional[type]`       | `SET_VAR var (value)`              | `(value)` / `none`       |
 | `in_stream`            | `OPEN_FILE_IN path var`            |                          |
 | `out_stream`           | `OPEN_FILE_OUT path var`           |                          |
 
