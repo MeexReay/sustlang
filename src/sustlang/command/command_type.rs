@@ -134,17 +134,35 @@ pub enum CommandType {
     /// Параметры: `name_var`, `stream_var`
     Write,
 
-    /// Прочитать с `stream_var` ровно `size_var` байтов в переменную `name_var` типа `list[char]`
+    /// Прочитать с `stream_var` ровно `length_var` байтов в переменную `name_var` типа `string`/`list[char]`
     ///
-    /// Название: READ \
-    /// Параметры: `name_var`, `size_var`, `stream_var`
-    Read,
+    /// Название: READ_LENGTH \
+    /// Параметры: `name_var`, `length_var`, `stream_var`
+    ReadLength,
 
-    /// Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `list[char]`
+    /// Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `string`/`list[char]`
     ///
     /// Название: READ_ALL \
     /// Параметры: `name_var`, `stream_var`
     ReadAll,
+
+    /// Прочитать с `stream_var` в переменную `name_var` типа `list[char]`/`string`
+    ///
+    /// Название: READ \
+    /// Параметры: `name_var`, `stream_var`
+    Read,
+
+    /// Прочитать с `stream_var` один символ в переменную `name_var` типа `char`
+    ///
+    /// Название: READ_CHAR \
+    /// Параметры: `name_var`, `stream_var`
+    ReadChar,
+
+    /// Прочитать с `stream_var` одну строку в переменную `name_var` типа `list[char]`/`string`
+    ///
+    /// Название: READ_LINE \
+    /// Параметры: `name_var`, `stream_var`
+    ReadLine,
 
     /// Функция `func` (с единственным аргументом с типом `int`) вызывается с `start_index` до `end_index` включительно, `start_index` и `end_index` это названия переменных
     ///
@@ -415,6 +433,9 @@ impl CommandType {
             "WRITE" => Ok(CommandType::Write),
             "READ" => Ok(CommandType::Read),
             "READ_ALL" => Ok(CommandType::ReadAll),
+            "READ_LINE" => Ok(CommandType::ReadLine),
+            "READ_CHAR" => Ok(CommandType::ReadChar),
+            "READ_LENGTH" => Ok(CommandType::ReadLength),
             "FOR" => Ok(CommandType::For),
             "FOR_MAP" => Ok(CommandType::ForMap),
             "FOR_LIST" => Ok(CommandType::ForList),

@@ -14,6 +14,8 @@ pub enum ScriptError {
     FunctionUnknownError,
     FileReadError,
     FileWriteError,
+    StreamReadError,
+    StreamWriteError,
 }
 
 impl Display for ScriptError {

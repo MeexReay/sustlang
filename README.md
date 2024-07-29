@@ -189,8 +189,11 @@ FUNC_END
 | Команда                  | Параметры  | Описание    |
 |--------------------------|------------|-------------|
 | `WRITE`                  | `name_var`, `stream_var` | Вывести переменную `name_var` в `stream_var` |
-| `READ`                   | `name_var`, `size_var`, `stream_var` | Прочитать с `stream_var` ровно `size_var` байтов в переменную `name_var` типа `list[char]`/`string` |
+| `READ`                   | `name_var`, `stream_var` | Прочитать с `stream_var` в переменную `name_var` типа `list[char]`/`string` |
+| `READ_CHAR`              | `name_var`, `stream_var` | Прочитать с `stream_var` один символ в переменную `name_var` типа `char` |
+| `READ_LENGTH`            | `name_var`, `length_var`, `stream_var` | Прочитать с `stream_var` ровно `length_var` байтов в переменную `name_var` типа `list[char]`/`string` |
 | `READ_ALL`               | `name_var`, `stream_var` | Прочитать с `stream_var` все имеющиеся байты в переменную `name_var` типа `list[char]`/`string` |
+| `READ_LINE`              | `name_var`, `stream_var` | Прочитать с `stream_var` одну строку в переменную `name_var` типа `list[char]`/`string` |
 
 
 ### Файлы

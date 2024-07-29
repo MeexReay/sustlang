@@ -1,13 +1,14 @@
 use bytebuffer::ByteBuffer;
 use rand::Rng;
 
-use crate::{variable, FileOutStream, Pohuy};
+use crate::{variable, FileOutStream, IgnoreResult};
 
 use super::super::command::CommandType;
 use super::super::script::{RunningScript, ScriptError};
 use super::super::var::{VarType, Variable};
 
 use std::collections::HashMap;
+use std::io::{BufRead, BufReader};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{fs, thread};
@@ -1831,7 +1832,176 @@ impl Command {
                     )
                     .map_err(|f| (f, self.clone()))?;
             }
+            CommandType::ReadLine => {
+                let name_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let stream_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+
+                let var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(name_var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?;
+                let stream = script
+                    .lock()
+                    .unwrap()
+                    .get_var(stream_var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?
+                    .as_in_stream()
+                    .map_err(|f| (f, self.clone()))?;
+
+                let mut line = String::new();
+                let mut buffer = [0; 1];
+                while stream
+                    .lock()
+                    .unwrap()
+                    .read(&mut buffer)
+                    .map_err(|_| (ScriptError::StreamReadError, self.clone()))?
+                    > 0
+                {
+                    if buffer[0] == b'\n' {
+                        break;
+                    }
+                    line.push(buffer[0] as char);
+                }
+
+                let buffer = line.as_bytes().to_vec();
+
+                script
+                    .lock()
+                    .unwrap()
+                    .set_var(
+                        name_var,
+                        match var {
+                            Variable::List(VarType::Char, _) => Variable::from_list(
+                                Some(
+                                    buffer
+                                        .iter()
+                                        .map(|f| Variable::from_char(Some(*f)))
+                                        .collect(),
+                                ),
+                                VarType::List(Box::new(VarType::Char)),
+                            ),
+                            Variable::String(_, _) => Variable::from_str(Some(
+                                String::from_utf8(buffer)
+                                    .or(Err(ScriptError::StringUTF8Error))
+                                    .map_err(|f| (f, self.clone()))?,
+                            )),
+                            _ => {
+                                return Err((ScriptError::TypeMismatchError, self.clone()));
+                            }
+                        },
+                        global,
+                        false,
+                        locals,
+                    )
+                    .map_err(|f| (f, self.clone()))?;
+            }
+            CommandType::ReadChar => {
+                let name_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let stream_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+
+                let stream = script
+                    .lock()
+                    .unwrap()
+                    .get_var(stream_var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?
+                    .as_in_stream()
+                    .map_err(|f| (f, self.clone()))?;
+
+                let mut buffer = [0; 1];
+                let read = stream
+                    .lock()
+                    .unwrap()
+                    .read(&mut buffer)
+                    .map_err(|_| (ScriptError::StreamReadError, self.clone()))?
+                    > 0;
+                let variable = if read {
+                    Variable::from_char(Some(buffer[0]))
+                } else {
+                    Variable::from_char(None)
+                };
+
+                script
+                    .lock()
+                    .unwrap()
+                    .set_var(name_var, variable, global, false, locals)
+                    .map_err(|f| (f, self.clone()))?;
+            }
             CommandType::Read => {
+                let name_var = self
+                    .args
+                    .get(0)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+                let stream_var = self
+                    .args
+                    .get(1)
+                    .ok_or((ScriptError::CommandArgsInvalidError, self.clone()))?
+                    .clone();
+
+                let var = script
+                    .lock()
+                    .unwrap()
+                    .get_var(name_var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?;
+                let stream = script
+                    .lock()
+                    .unwrap()
+                    .get_var(stream_var.clone(), locals)
+                    .map_err(|f| (f, self.clone()))?
+                    .as_in_stream()
+                    .map_err(|f| (f, self.clone()))?;
+
+                let mut buffer: Vec<u8> = Vec::new();
+                stream.lock().unwrap().read(&mut buffer).unwrap();
+
+                script
+                    .lock()
+                    .unwrap()
+                    .set_var(
+                        name_var,
+                        match var {
+                            Variable::List(VarType::Char, _) => Variable::from_list(
+                                Some(
+                                    buffer
+                                        .iter()
+                                        .map(|f| Variable::from_char(Some(*f)))
+                                        .collect(),
+                                ),
+                                VarType::List(Box::new(VarType::Char)),
+                            ),
+                            Variable::String(_, _) => Variable::from_str(Some(
+                                String::from_utf8(buffer)
+                                    .or(Err(ScriptError::StringUTF8Error))
+                                    .map_err(|f| (f, self.clone()))?,
+                            )),
+                            _ => {
+                                return Err((ScriptError::TypeMismatchError, self.clone()));
+                            }
+                        },
+                        global,
+                        false,
+                        locals,
+                    )
+                    .map_err(|f| (f, self.clone()))?;
+            }
+            CommandType::ReadLength => {
                 let name_var = self
                     .args
                     .get(0)

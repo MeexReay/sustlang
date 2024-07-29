@@ -1,0 +1,14 @@
+
+FUNC null println text string
+    TEMP_VAR char new_line 10
+    ADD_STR text new_line
+    WRITE text cout
+FUNC_END
+
+FUNC string input
+    READ_LINE result cin
+FUNC_END
+
+INIT_VAR string read
+USE_FUNC input read
+USE_FUNC println null read

@@ -1,10 +1,10 @@
 use std::{fs, io::Write};
 
-pub trait Pohuy<T, E> {
-    fn pohuy(&self) {}
+pub trait IgnoreResult<T, E> {
+    fn ignore(&self) {}
 }
 
-impl<T, E> Pohuy<T, E> for Result<T, E> {}
+impl<T, E> IgnoreResult<T, E> for Result<T, E> {}
 
 pub struct FileOutStream {
     bytes: Vec<u8>,

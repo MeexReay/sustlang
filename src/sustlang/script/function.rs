@@ -1,5 +1,5 @@
 use super::super::command::{Command, CommandType};
-use super::super::other::Pohuy;
+use super::super::other::IgnoreResult;
 use super::super::var::{VarType, Variable};
 use super::{RunningScript, ScriptError};
 
@@ -67,7 +67,7 @@ impl Function {
                     .unwrap()
                     .drop_var(ele, &mut locals)
                     .map_err(|f| (f, command.clone()))
-                    .pohuy();
+                    .ignore();
             }
         }
 
